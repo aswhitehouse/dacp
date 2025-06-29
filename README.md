@@ -1,4 +1,4 @@
-# DACP - Dynamic Agent Communication Protocol
+# DACP - Delcarative Agent Communication Protocol
 
 A Python library for managing LLM/agent communications and tool function calls following the OAS Open Agent Specification.
 
