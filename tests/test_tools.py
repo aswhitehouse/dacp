@@ -61,6 +61,12 @@ def test_tool_with_optional_args():
     assert result["result"] == "test:default"
 
 
+def test_file_writer_registered():
+    """Test that file_writer is automatically registered."""
+    assert "file_writer" in TOOL_REGISTRY
+    assert TOOL_REGISTRY["file_writer"] == file_writer
+
+
 def test_clear_tool_registry():
     """Test that we can clear and re-register tools."""
 
@@ -74,6 +80,9 @@ def test_clear_tool_registry():
     TOOL_REGISTRY.clear()
     assert "test_tool" not in TOOL_REGISTRY
 
+    # Re-register file_writer since it was cleared
+    register_tool("file_writer", file_writer)
+
 
 def test_file_writer_creates_parent_directories():
     """Test that file_writer creates parent directories automatically."""
@@ -81,13 +90,13 @@ def test_file_writer_creates_parent_directories():
         # Test writing to a nested directory that doesn't exist
         test_path = os.path.join(temp_dir, "nested", "subdir", "test.txt")
         content = "Hello, World!"
-        
+
         result = file_writer(test_path, content)
-        
+
         assert result["success"] is True
         assert result["path"] == test_path
         assert "Successfully wrote" in result["message"]
-        
+
         # Verify the file was created with correct content
         assert os.path.exists(test_path)
         with open(test_path, "r", encoding="utf-8") as f:
@@ -99,9 +108,9 @@ def test_file_writer_existing_directory():
     with tempfile.TemporaryDirectory() as temp_dir:
         test_path = os.path.join(temp_dir, "test.txt")
         content = "Test content"
-        
+
         result = file_writer(test_path, content)
-        
+
         assert result["success"] is True
         assert os.path.exists(test_path)
         with open(test_path, "r", encoding="utf-8") as f:
@@ -113,9 +122,9 @@ def test_file_writer_permission_error():
     # Try to write to a system directory that should be protected
     test_path = "/root/test.txt"
     content = "This should fail"
-    
+
     result = file_writer(test_path, content)
-    
+
     assert result["success"] is False
     assert "error" in result
     assert "Failed to write" in result["message"]
@@ -126,15 +135,9 @@ def test_file_writer_unicode_content():
     with tempfile.TemporaryDirectory() as temp_dir:
         test_path = os.path.join(temp_dir, "unicode_test.txt")
         content = "Hello, 世界! 🌍"
-        
+
         result = file_writer(test_path, content)
-        
+
         assert result["success"] is True
         with open(test_path, "r", encoding="utf-8") as f:
             assert f.read() == content
-
-
-def test_file_writer_registered():
-    """Test that file_writer is automatically registered."""
-    assert "file_writer" in TOOL_REGISTRY
-    assert TOOL_REGISTRY["file_writer"] == file_writer
