@@ -5,7 +5,7 @@ A Python library for managing LLM/agent communications and tool function calls
 following the OAS Open Agent Specification.
 """
 
-from .tools import register_tool, run_tool, TOOL_REGISTRY
+from .tools import register_tool, run_tool, TOOL_REGISTRY, file_writer
 from .llm import call_llm
 from .protocol import (
     parse_agent_response,
@@ -21,6 +21,7 @@ __all__ = [
     "register_tool",
     "run_tool",
     "TOOL_REGISTRY",
+    "file_writer",
     "call_llm",
     "parse_agent_response",
     "is_tool_request",

@@ -1,4 +1,4 @@
-# DACP - Delcarative Agent Communication Protocol
+# DACP - Declarative Agent Communication Protocol
 
 A Python library for managing LLM/agent communications and tool function calls following the OAS Open Agent Specification.
 
@@ -19,6 +19,10 @@ def my_custom_tool(param1: str, param2: int) -> dict:
 
 dacp.register_tool("my_custom_tool", my_custom_tool)
 
+# Use the built-in file_writer tool (creates directories automatically)
+result = dacp.file_writer("./output/greeting.txt", "Hello, World!")
+print(result["message"])  # "Successfully wrote 13 characters to ./output/greeting.txt"
+
 # Call an LLM
 response = dacp.call_llm("What is the weather like today?")
 
@@ -35,6 +39,7 @@ if dacp.is_tool_request(parsed):
 ## Features
 
 - **Tool Registry**: Register and manage custom tools for LLM agents
+- **Built-in Tools**: Includes a `file_writer` tool that automatically creates parent directories
 - **LLM Integration**: Built-in support for OpenAI models (extensible)
 - **Protocol Parsing**: Parse and validate agent responses
 - **Tool Execution**: Safe execution of registered tools
@@ -47,6 +52,7 @@ if dacp.is_tool_request(parsed):
 - `register_tool(tool_id: str, func)`: Register a new tool
 - `run_tool(tool_id: str, args: Dict) -> dict`: Execute a registered tool
 - `TOOL_REGISTRY`: Access the current tool registry
+- `file_writer(path: str, content: str) -> dict`: Write content to file, creating directories automatically
 
 ### LLM
 
@@ -60,6 +66,31 @@ if dacp.is_tool_request(parsed):
 - `wrap_tool_result(name: str, result: dict) -> dict`: Wrap tool result for agent
 - `is_final_response(msg: dict) -> bool`: Check if message is a final response
 - `get_final_response(msg: dict) -> dict`: Extract final response
+
+## Built-in Tools
+
+### file_writer
+
+The `file_writer` tool automatically creates parent directories and writes content to files:
+
+```python
+import dacp
+
+# This will create the ./output/ directory if it doesn't exist
+result = dacp.file_writer("./output/file.txt", "Hello, World!")
+
+if result["success"]:
+    print(f"File written: {result['path']}")
+    print(f"Message: {result['message']}")
+else:
+    print(f"Error: {result['error']}")
+```
+
+**Features:**
+- ✅ Automatically creates parent directories
+- ✅ Handles Unicode content properly
+- ✅ Returns detailed success/error information
+- ✅ Safe error handling
 
 ## Development
 
