@@ -92,31 +92,25 @@ def test_complex_agent_response():
     complex_response = {
         "tool_request": {
             "name": "weather_api",
-            "args": {
-                "location": "New York",
-                "units": "celsius"
-            }
+            "args": {"location": "New York", "units": "celsius"},
         },
-        "metadata": {
-            "timestamp": "2024-01-01T00:00:00Z",
-            "session_id": "abc123"
-        }
+        "metadata": {"timestamp": "2024-01-01T00:00:00Z", "session_id": "abc123"},
     }
-    
+
     # Test parsing
     parsed = parse_agent_response(complex_response)
     assert parsed == complex_response
-    
+
     # Test tool request detection
     assert is_tool_request(parsed) is True
-    
+
     # Test getting tool request
     name, args = get_tool_request(parsed)
     assert name == "weather_api"
     assert args == {"location": "New York", "units": "celsius"}
-    
+
     # Test wrapping result
     tool_result = {"temperature": 20, "condition": "sunny"}
     wrapped = wrap_tool_result(name, tool_result)
     assert wrapped["tool_result"]["name"] == "weather_api"
-    assert wrapped["tool_result"]["result"] == tool_result 
+    assert wrapped["tool_result"]["result"] == tool_result

@@ -19,7 +19,7 @@ from .protocol import (
 __version__ = "0.1.0"
 __all__ = [
     "register_tool",
-    "run_tool", 
+    "run_tool",
     "TOOL_REGISTRY",
     "call_llm",
     "parse_agent_response",
