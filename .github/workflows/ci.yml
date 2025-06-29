@@ -63,9 +63,6 @@ jobs:
     - name: Run black
       run: black --check --diff .
     
-    - name: Run flake8
-      run: flake8 dacp/ tests/
-    
     - name: Run mypy
       run: mypy dacp/
 

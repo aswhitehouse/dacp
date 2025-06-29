@@ -1,7 +1,6 @@
 import pytest
 import tempfile
 import os
-from pathlib import Path
 from dacp.tools import register_tool, run_tool, TOOL_REGISTRY, file_writer
 
 
