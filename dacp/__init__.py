@@ -15,6 +15,7 @@ from .protocol import (
     is_final_response,
     get_final_response,
 )
+from .orchestrator import Orchestrator, Agent
 
 __version__ = "0.1.0"
 __all__ = [
@@ -29,4 +30,6 @@ __all__ = [
     "wrap_tool_result",
     "is_final_response",
     "get_final_response",
+    "Orchestrator",
+    "Agent",
 ]

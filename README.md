@@ -13,39 +13,52 @@ pip install -e .
 ```python
 import dacp
 
-# Register a custom tool
-def my_custom_tool(param1: str, param2: int) -> dict:
-    return {"result": f"Processed {param1} with {param2}"}
+# Create an orchestrator to manage agents
+orchestrator = dacp.Orchestrator()
 
-dacp.register_tool("my_custom_tool", my_custom_tool)
+# Create and register an agent
+class MyAgent:
+    def handle_message(self, message):
+        return {"response": f"Hello {message.get('name', 'World')}!"}
 
-# Use the built-in file_writer tool (creates directories automatically)
+agent = MyAgent()
+orchestrator.register_agent("my-agent", agent)
+
+# Send a message to the agent
+response = orchestrator.send_message("my-agent", {"name": "Alice"})
+print(response)  # {"response": "Hello Alice!"}
+
+# Use built-in tools
 result = dacp.file_writer("./output/greeting.txt", "Hello, World!")
 print(result["message"])  # "Successfully wrote 13 characters to ./output/greeting.txt"
 
-# Call an LLM
+# Call an LLM directly
 response = dacp.call_llm("What is the weather like today?")
-
-# Parse agent response
-parsed = dacp.parse_agent_response(response)
-
-# Check if it's a tool request
-if dacp.is_tool_request(parsed):
-    tool_name, args = dacp.get_tool_request(parsed)
-    result = dacp.run_tool(tool_name, args)
-    tool_response = dacp.wrap_tool_result(tool_name, result)
 ```
 
 ## Features
 
+- **Agent Orchestration**: Central management of multiple agents with message routing
 - **Tool Registry**: Register and manage custom tools for LLM agents
 - **Built-in Tools**: Includes a `file_writer` tool that automatically creates parent directories
 - **LLM Integration**: Built-in support for OpenAI models (extensible)
 - **Protocol Parsing**: Parse and validate agent responses
 - **Tool Execution**: Safe execution of registered tools
+- **Conversation History**: Track and query agent interactions
 - **OAS Compliance**: Follows Open Agent Specification standards
 
 ## API Reference
+
+### Orchestrator
+
+- `Orchestrator()`: Create a new orchestrator instance
+- `register_agent(agent_id: str, agent) -> None`: Register an agent
+- `unregister_agent(agent_id: str) -> bool`: Remove an agent
+- `send_message(agent_id: str, message: Dict) -> Dict`: Send message to specific agent
+- `broadcast_message(message: Dict, exclude_agents: List[str] = None) -> Dict`: Send message to all agents
+- `get_conversation_history(agent_id: str = None) -> List[Dict]`: Get conversation history
+- `clear_history() -> None`: Clear conversation history
+- `get_session_info() -> Dict`: Get current session information
 
 ### Tools
 
@@ -66,6 +79,80 @@ if dacp.is_tool_request(parsed):
 - `wrap_tool_result(name: str, result: dict) -> dict`: Wrap tool result for agent
 - `is_final_response(msg: dict) -> bool`: Check if message is a final response
 - `get_final_response(msg: dict) -> dict`: Extract final response
+
+## Agent Development
+
+### Creating an Agent
+
+Agents must implement a `handle_message` method:
+
+```python
+import dacp
+
+class GreetingAgent:
+    def handle_message(self, message):
+        name = message.get("name", "World")
+        task = message.get("task")
+        
+        if task == "greet":
+            return {"response": f"Hello, {name}!"}
+        elif task == "farewell":
+            return {"response": f"Goodbye, {name}!"}
+        else:
+            return {"error": f"Unknown task: {task}"}
+
+# Register the agent
+orchestrator = dacp.Orchestrator()
+agent = GreetingAgent()
+orchestrator.register_agent("greeter", agent)
+
+# Use the agent
+response = orchestrator.send_message("greeter", {
+    "task": "greet", 
+    "name": "Alice"
+})
+print(response)  # {"response": "Hello, Alice!"}
+```
+
+### Agent Base Class
+
+You can also inherit from the `Agent` base class:
+
+```python
+import dacp
+
+class MyAgent(dacp.Agent):
+    def handle_message(self, message):
+        return {"processed": message}
+```
+
+### Tool Requests from Agents
+
+Agents can request tool execution by returning properly formatted responses:
+
+```python
+class ToolUsingAgent:
+    def handle_message(self, message):
+        if message.get("task") == "write_file":
+            return {
+                "tool_request": {
+                    "name": "file_writer",
+                    "args": {
+                        "path": "./output/agent_file.txt",
+                        "content": "Hello from agent!"
+                    }
+                }
+            }
+        return {"response": "Task completed"}
+
+# The orchestrator will automatically execute the tool and return results
+orchestrator = dacp.Orchestrator()
+agent = ToolUsingAgent()
+orchestrator.register_agent("file-agent", agent)
+
+response = orchestrator.send_message("file-agent", {"task": "write_file"})
+# Tool will be executed automatically
+```
 
 ## Built-in Tools
 
