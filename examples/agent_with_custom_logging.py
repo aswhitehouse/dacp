@@ -2,7 +2,7 @@
 """
 Agent with Custom Logging Configuration
 
-This example shows how to integrate DACP logging configuration directly 
+This example shows how to integrate DACP logging configuration directly
 into your agent code, including loading config from environment variables
 or configuration files.
 """
