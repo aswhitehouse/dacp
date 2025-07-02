@@ -1,416 +1,303 @@
 """
-DACP Intelligence Module - Generic LLM provider interface.
+Intelligence provider integration for DACP.
+
+This module provides a unified interface for calling different LLM providers
+(OpenAI, Anthropic, Azure, Local) with comprehensive error handling and logging.
 """
 
 import os
 import logging
-from typing import Dict, Any, Optional
+import time
+from typing import Dict, Any, Union
 
-# Set up logger for this module
 logger = logging.getLogger("dacp.intelligence")
 
 
-class IntelligenceError(Exception):
-    """Base exception for intelligence provider errors."""
-
-    pass
-
-
-class UnsupportedProviderError(IntelligenceError):
-    """Raised when an unsupported intelligence provider is requested."""
-
-    pass
-
-
-class ConfigurationError(IntelligenceError):
-    """Raised when intelligence configuration is invalid."""
-
-    pass
-
-
-def invoke_intelligence(prompt: str, config: Dict[str, Any]) -> str:
+def invoke_intelligence(
+    prompt: str, config: Dict[str, Any]
+) -> Union[str, Dict[str, Any]]:
     """
-    Invoke an intelligence provider (LLM) with the given prompt and configuration.
+    Invoke an intelligence provider with the given prompt and configuration.
 
     Args:
-        prompt: The input prompt to send to the intelligence provider
-        config: Configuration dictionary containing provider details
+        prompt: The input prompt/message to send to the intelligence provider
+        config: Configuration dictionary containing provider settings
 
     Returns:
-        Response string from the intelligence provider
+        Response from the intelligence provider (string or dict)
 
     Raises:
-        UnsupportedProviderError: If the provider is not supported
-        ConfigurationError: If the configuration is invalid
-        IntelligenceError: For other provider-specific errors
+        ValueError: If configuration is invalid
+        Exception: If the intelligence call fails
     """
-    engine = config.get("engine")
-    if not engine:
-        logger.error("❌ Missing 'engine' in intelligence configuration")
-        raise ConfigurationError("Missing 'engine' in intelligence configuration")
-
-    engine = engine.lower()
-    model = config.get("model", "default")
-
-    logger.info(f"🧠 Invoking intelligence: engine='{engine}', model='{model}'")
-    logger.debug(f"📋 Prompt length: {len(prompt)} characters")
-    logger.debug(f"⚙️  Full config: {_sanitize_config_for_logging(config)}")
-
-    import time
-
     start_time = time.time()
 
+    engine = config.get("engine", "").lower()
+    model = config.get("model", "unknown")
+
+    logger.info(f"🧠 Invoking intelligence: engine='{engine}', model='{model}'")
+    logger.debug(f"📋 Prompt: {prompt[:100]}...")
+
     try:
-        if engine == "openai":
+        # Validate configuration
+        _validate_config(config)
+
+        # Route to appropriate provider
+        if engine in ["openai", "gpt"]:
             result = _invoke_openai(prompt, config)
-        elif engine == "anthropic":
+        elif engine in ["anthropic", "claude"]:
             result = _invoke_anthropic(prompt, config)
-        elif engine == "azure":
+        elif engine in ["azure", "azure_openai"]:
             result = _invoke_azure_openai(prompt, config)
-        elif engine == "local":
+        elif engine in ["local", "ollama"]:
             result = _invoke_local(prompt, config)
         else:
-            logger.error(f"❌ Unsupported intelligence engine: {engine}")
-            raise UnsupportedProviderError(f"Unsupported intelligence engine: {engine}")
+            available_engines = ["openai", "anthropic", "azure", "local"]
+            raise ValueError(
+                f"Unsupported engine: {engine}. "
+                f"Available engines: {available_engines}"
+            )
 
-        execution_time = time.time() - start_time
-        logger.info(
-            f"✅ Intelligence response received in {execution_time:.3f}s (length: {len(result)} chars)"
-        )
-        logger.debug(
-            f"📤 Response preview: {result[:100]}{'...' if len(result) > 100 else ''}"
-        )
+        duration = time.time() - start_time
+        logger.info(f"✅ Intelligence call completed in {duration:.3f}s")
+        logger.debug(f"📤 Response: {str(result)[:200]}...")
 
         return result
 
-    except (IntelligenceError, UnsupportedProviderError, ConfigurationError):
-        # Re-raise our own exceptions without modification
-        execution_time = time.time() - start_time
-        logger.error(f"❌ Intelligence call failed after {execution_time:.3f}s")
-        raise
     except Exception as e:
-        execution_time = time.time() - start_time
+        duration = time.time() - start_time
         logger.error(
-            f"❌ Unexpected intelligence error after {execution_time:.3f}s: {type(e).__name__}: {e}"
+            f"❌ Intelligence call failed after {duration:.3f}s: "
+            f"{type(e).__name__}: {e}"
         )
-        raise IntelligenceError(f"Unexpected error: {e}")
+        raise
+
+
+def _validate_config(config: Dict[str, Any]) -> None:
+    """Validate intelligence configuration."""
+    if not isinstance(config, dict):
+        raise ValueError("Configuration must be a dictionary")
+
+    engine = config.get("engine")
+    if not engine:
+        raise ValueError("Engine must be specified in configuration")
 
 
 def _invoke_openai(prompt: str, config: Dict[str, Any]) -> str:
-    """Invoke OpenAI provider."""
-    logger.debug("🔵 Initializing OpenAI provider")
-
+    """Invoke OpenAI GPT models."""
     try:
         import openai
-
-        logger.debug("✅ OpenAI package imported successfully")
     except ImportError:
-        logger.error("❌ OpenAI package not installed")
-        raise IntelligenceError("OpenAI package not installed. Run: pip install openai")
+        raise ImportError("OpenAI package not installed. Run: pip install openai")
 
-    model = config.get("model", "gpt-4")
+    # Get API key
     api_key = config.get("api_key") or os.getenv("OPENAI_API_KEY")
-    base_url = config.get("endpoint", "https://api.openai.com/v1")
-    temperature = config.get("temperature", 0.7)
-    max_tokens = config.get("max_tokens", 150)
-
-    logger.debug(
-        f"🔧 OpenAI config: model={model}, base_url={base_url}, temp={temperature}, max_tokens={max_tokens}"
-    )
-
     if not api_key:
         logger.error("❌ OpenAI API key not found")
-        raise ConfigurationError(
-            "OpenAI API key not found in config or OPENAI_API_KEY environment variable"
+        raise ValueError(
+            "OpenAI API key not found in config or OPENAI_API_KEY "
+            "environment variable"
         )
 
-    try:
-        logger.debug("🔗 Creating OpenAI client")
+    # Configure client
+    base_url = config.get("base_url")
+    if base_url:
         client = openai.OpenAI(api_key=api_key, base_url=base_url)
+    else:
+        client = openai.OpenAI(api_key=api_key)
 
-        logger.debug("📡 Sending request to OpenAI API")
-        response = client.chat.completions.create(
-            model=model,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
+    # Prepare request
+    model = config.get("model", "gpt-3.5-turbo")
+    temperature = config.get("temperature", 0.7)
+    max_tokens = config.get("max_tokens", 1000)
 
-        content = response.choices[0].message.content
-        if content is None:
-            logger.error("❌ OpenAI returned empty response")
-            raise IntelligenceError("OpenAI returned empty response")
+    logger.debug(
+        f"🔧 OpenAI config: model={model}, temp={temperature}, "
+        f"max_tokens={max_tokens}"
+    )
 
-        logger.debug(f"✅ OpenAI API call successful")
-        return content
+    # Make API call
+    response = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=temperature,
+        max_tokens=max_tokens,
+    )
 
-    except Exception as e:
-        logger.error(f"❌ OpenAI API error: {type(e).__name__}: {e}")
-        raise IntelligenceError(f"OpenAI API error: {e}")
+    content = response.choices[0].message.content
+    if content is None:
+        raise ValueError("OpenAI returned empty response")
+
+    return content
 
 
 def _invoke_anthropic(prompt: str, config: Dict[str, Any]) -> str:
-    """Invoke Anthropic (Claude) provider."""
-    logger.debug("🟣 Initializing Anthropic provider")
-
+    """Invoke Anthropic Claude models."""
     try:
         import anthropic
-
-        logger.debug("✅ Anthropic package imported successfully")
     except ImportError:
-        logger.error("❌ Anthropic package not installed")
-        raise IntelligenceError(
-            "Anthropic package not installed. Run: pip install anthropic"
-        )
+        raise ImportError("Anthropic package not installed. Run: pip install anthropic")
 
-    model = config.get("model", "claude-3-haiku-20240307")
+    # Get API key
     api_key = config.get("api_key") or os.getenv("ANTHROPIC_API_KEY")
-    base_url = config.get("endpoint", "https://api.anthropic.com")
-    max_tokens = config.get("max_tokens", 150)
-    temperature = config.get("temperature", 0.7)
-
-    logger.debug(
-        f"🔧 Anthropic config: model={model}, base_url={base_url}, temp={temperature}, max_tokens={max_tokens}"
-    )
-
     if not api_key:
         logger.error("❌ Anthropic API key not found")
-        raise ConfigurationError(
-            "Anthropic API key not found in config or ANTHROPIC_API_KEY environment variable"
+        raise ValueError(
+            "Anthropic API key not found in config or ANTHROPIC_API_KEY "
+            "environment variable"
         )
 
-    try:
-        logger.debug("🔗 Creating Anthropic client")
+    # Configure client
+    base_url = config.get("base_url")
+    if base_url:
         client = anthropic.Anthropic(api_key=api_key, base_url=base_url)
+    else:
+        client = anthropic.Anthropic(api_key=api_key)
 
-        logger.debug("📡 Sending request to Anthropic API")
-        response = client.messages.create(
-            model=model,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            messages=[{"role": "user", "content": prompt}],
-        )
+    # Prepare request
+    model = config.get("model", "claude-3-haiku-20240307")
+    temperature = config.get("temperature", 0.7)
+    max_tokens = config.get("max_tokens", 1000)
 
-        if not response.content or len(response.content) == 0:
-            logger.error("❌ Anthropic returned empty response")
-            raise IntelligenceError("Anthropic returned empty response")
+    logger.debug(
+        f"🔧 Anthropic config: model={model}, temp={temperature}, "
+        f"max_tokens={max_tokens}"
+    )
 
-        # Anthropic returns a list of content blocks
-        result = response.content[0].text
-        logger.debug(f"✅ Anthropic API call successful")
-        return result
+    # Make API call
+    response = client.messages.create(
+        model=model,
+        max_tokens=max_tokens,
+        temperature=temperature,
+        messages=[{"role": "user", "content": prompt}],
+    )
 
-    except Exception as e:
-        logger.error(f"❌ Anthropic API error: {type(e).__name__}: {e}")
-        raise IntelligenceError(f"Anthropic API error: {e}")
+    # Get text from first content block
+    content_block = response.content[0]
+    if hasattr(content_block, "text"):
+        return content_block.text
+    else:
+        raise ValueError("Anthropic returned unexpected response format")
 
 
 def _invoke_azure_openai(prompt: str, config: Dict[str, Any]) -> str:
-    """Invoke Azure OpenAI provider."""
-    logger.debug("🔷 Initializing Azure OpenAI provider")
-
+    """Invoke Azure OpenAI models."""
     try:
         import openai
-
-        logger.debug("✅ OpenAI package imported successfully")
     except ImportError:
-        logger.error("❌ OpenAI package not installed")
-        raise IntelligenceError("OpenAI package not installed. Run: pip install openai")
+        raise ImportError("OpenAI package not installed. Run: pip install openai")
 
-    model = config.get("model", "gpt-4")
+    # Get required Azure configuration
     api_key = config.get("api_key") or os.getenv("AZURE_OPENAI_API_KEY")
     endpoint = config.get("endpoint") or os.getenv("AZURE_OPENAI_ENDPOINT")
-    api_version = config.get("api_version", "2024-02-01")
-    temperature = config.get("temperature", 0.7)
-    max_tokens = config.get("max_tokens", 150)
-
-    logger.debug(
-        f"🔧 Azure config: model={model}, endpoint={endpoint}, api_version={api_version}, temp={temperature}, max_tokens={max_tokens}"
-    )
+    api_version = config.get("api_version", "2023-12-01-preview")
 
     if not api_key:
         logger.error("❌ Azure OpenAI API key not found")
-        raise ConfigurationError(
-            "Azure OpenAI API key not found in config or AZURE_OPENAI_API_KEY environment variable"
+        raise ValueError(
+            "Azure OpenAI API key not found in config or "
+            "AZURE_OPENAI_API_KEY environment variable"
         )
 
     if not endpoint:
         logger.error("❌ Azure OpenAI endpoint not found")
-        raise ConfigurationError(
-            "Azure OpenAI endpoint not found in config or AZURE_OPENAI_ENDPOINT environment variable"
+        raise ValueError(
+            "Azure OpenAI endpoint not found in config or "
+            "AZURE_OPENAI_ENDPOINT environment variable"
         )
 
-    try:
-        logger.debug("🔗 Creating Azure OpenAI client")
-        client = openai.AzureOpenAI(
-            api_key=api_key, azure_endpoint=endpoint, api_version=api_version
-        )
+    # Configure Azure client
+    client = openai.AzureOpenAI(
+        api_key=api_key, azure_endpoint=endpoint, api_version=api_version
+    )
 
-        logger.debug("📡 Sending request to Azure OpenAI API")
-        response = client.chat.completions.create(
-            model=model,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
+    # Prepare request
+    model = config.get("model", config.get("deployment_name", "gpt-35-turbo"))
+    temperature = config.get("temperature", 0.7)
+    max_tokens = config.get("max_tokens", 1000)
 
-        content = response.choices[0].message.content
-        if content is None:
-            logger.error("❌ Azure OpenAI returned empty response")
-            raise IntelligenceError("Azure OpenAI returned empty response")
+    logger.debug(
+        f"🔧 Azure OpenAI config: model={model}, temp={temperature}, "
+        f"max_tokens={max_tokens}"
+    )
 
-        logger.debug(f"✅ Azure OpenAI API call successful")
-        return content
+    # Make API call
+    response = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=temperature,
+        max_tokens=max_tokens,
+    )
 
-    except Exception as e:
-        logger.error(f"❌ Azure OpenAI API error: {type(e).__name__}: {e}")
-        raise IntelligenceError(f"Azure OpenAI API error: {e}")
+    content = response.choices[0].message.content
+    if content is None:
+        raise ValueError("Azure OpenAI returned empty response")
+
+    return content
 
 
 def _invoke_local(prompt: str, config: Dict[str, Any]) -> str:
-    """Invoke local LLM provider (e.g., Ollama, local API)."""
+    """Invoke local LLM (e.g., Ollama)."""
     import requests
 
-    endpoint = config.get("endpoint", "http://localhost:11434/api/generate")
+    base_url = config.get("base_url", "http://localhost:11434")
     model = config.get("model", "llama2")
-    temperature = config.get("temperature", 0.7)
-    max_tokens = config.get("max_tokens", 150)
+    endpoint = config.get("endpoint", "/api/generate")
 
-    logger.debug(f"🟢 Initializing local provider")
-    logger.debug(
-        f"🔧 Local config: model={model}, endpoint={endpoint}, temp={temperature}, max_tokens={max_tokens}"
-    )
+    url = f"{base_url.rstrip('/')}{endpoint}"
+
+    logger.debug(f"🔧 Local config: url={url}, model={model}")
+
+    # Prepare request payload
+    payload = {
+        "model": model,
+        "prompt": prompt,
+        "stream": False,
+        "options": {
+            "temperature": config.get("temperature", 0.7),
+            "num_predict": config.get("max_tokens", 1000),
+        },
+    }
 
     try:
-        # Format for Ollama API
-        if "ollama" in endpoint or ":11434" in endpoint:
-            logger.debug("📦 Using Ollama API format")
-            payload = {
-                "model": model,
-                "prompt": prompt,
-                "stream": False,
-                "options": {"temperature": temperature, "num_predict": max_tokens},
-            }
-        else:
-            logger.debug("📦 Using generic local API format")
-            payload = {
-                "model": model,
-                "prompt": prompt,
-                "temperature": temperature,
-                "max_tokens": max_tokens,
-            }
-
-        logger.debug(f"📡 Sending request to local endpoint: {endpoint}")
-        response = requests.post(endpoint, json=payload, timeout=30)
+        response = requests.post(url, json=payload, timeout=config.get("timeout", 30))
         response.raise_for_status()
 
         result = response.json()
 
-        # Handle different response formats
+        # Handle different response formats and ensure string return
         if "response" in result:
-            response_text = result["response"]  # Ollama format
-            logger.debug("✅ Local API call successful (Ollama format)")
+            response_text = result["response"]
+            return str(response_text) if response_text is not None else ""
+        elif "content" in result:
+            content_text = result["content"]
+            return str(content_text) if content_text is not None else ""
         elif "text" in result:
-            response_text = result["text"]  # Generic format
-            logger.debug("✅ Local API call successful (generic format)")
-        elif "choices" in result and len(result["choices"]) > 0:
-            response_text = result["choices"][0].get(
-                "text", ""
-            )  # OpenAI-compatible format
-            logger.debug("✅ Local API call successful (OpenAI-compatible format)")
+            text_content = result["text"]
+            return str(text_content) if text_content is not None else ""
         else:
-            logger.error(f"❌ Unexpected response format from local provider: {result}")
-            raise IntelligenceError(
-                f"Unexpected response format from local provider: {result}"
-            )
-
-        return response_text
+            logger.warning("Unexpected response format from local LLM")
+            return str(result)
 
     except requests.RequestException as e:
-        logger.error(f"❌ Local provider request error: {type(e).__name__}: {e}")
-        raise IntelligenceError(f"Local provider request error: {e}")
+        logger.error(f"❌ Local LLM request failed: {e}")
+        raise Exception(f"Local LLM request failed: {e}")
     except Exception as e:
-        logger.error(f"❌ Local provider error: {type(e).__name__}: {e}")
-        raise IntelligenceError(f"Local provider error: {e}")
+        logger.error(f"❌ Local LLM call failed: {e}")
+        raise
 
 
-def get_supported_engines() -> list:
-    """Get list of supported intelligence engines."""
-    return ["openai", "anthropic", "azure", "local"]
+def _mask_sensitive_config(config: Dict[str, Any]) -> Dict[str, Any]:
+    """Mask sensitive information in config for logging."""
+    masked = config.copy()
+    sensitive_keys = ["api_key", "password", "token", "secret"]
 
-
-def validate_config(config: Dict[str, Any]) -> bool:
-    """
-    Validate intelligence configuration.
-
-    Args:
-        config: Configuration dictionary
-
-    Returns:
-        True if valid
-
-    Raises:
-        ConfigurationError: If configuration is invalid
-    """
-    logger.debug(f"🔍 Validating intelligence configuration")
-
-    if not isinstance(config, dict):
-        logger.error("❌ Configuration must be a dictionary")
-        raise ConfigurationError("Configuration must be a dictionary")
-
-    engine = config.get("engine")
-    if not engine:
-        logger.error("❌ Missing 'engine' in configuration")
-        raise ConfigurationError("Missing 'engine' in configuration")
-
-    if engine.lower() not in get_supported_engines():
-        logger.error(f"❌ Unsupported engine: {engine}")
-        raise ConfigurationError(
-            f"Unsupported engine: {engine}. Supported engines: {get_supported_engines()}"
-        )
-
-    # Engine-specific validation
-    engine = engine.lower()
-    logger.debug(f"🔧 Validating {engine} specific configuration")
-
-    if engine in ["openai", "azure"]:
-        if (
-            not config.get("api_key")
-            and not os.getenv("OPENAI_API_KEY")
-            and not os.getenv("AZURE_OPENAI_API_KEY")
-        ):
-            logger.error(f"❌ API key required for {engine} engine")
-            raise ConfigurationError(f"API key required for {engine} engine")
-
-    elif engine == "anthropic":
-        if not config.get("api_key") and not os.getenv("ANTHROPIC_API_KEY"):
-            logger.error("❌ API key required for Anthropic engine")
-            raise ConfigurationError("API key required for Anthropic engine")
-
-    elif engine == "local":
-        if not config.get("endpoint"):
-            config["endpoint"] = (
-                "http://localhost:11434/api/generate"  # Default to Ollama
-            )
-            logger.debug("🔧 Set default endpoint for local engine")
-
-    logger.debug(f"✅ Configuration validation successful for {engine}")
-    return True
-
-
-def _sanitize_config_for_logging(config: Dict[str, Any]) -> Dict[str, Any]:
-    """Sanitize config for logging by masking sensitive data."""
-    sanitized = config.copy()
-
-    # Mask sensitive fields
-    sensitive_fields = ["api_key", "password", "token", "secret"]
-    for field in sensitive_fields:
-        if field in sanitized and sanitized[field]:
-            # Show first 4 and last 4 characters, mask the rest
-            value = str(sanitized[field])
-            if len(value) > 8:
-                sanitized[field] = f"{value[:4]}...{value[-4:]}"
+    for key in masked:
+        if any(sensitive in key.lower() for sensitive in sensitive_keys):
+            value = masked[key]
+            if isinstance(value, str) and len(value) > 8:
+                masked[key] = f"{value[:4]}...{value[-4:]}"
             else:
-                sanitized[field] = "***"
+                masked[key] = "***"
 
-    return sanitized
+    return masked

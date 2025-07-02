@@ -1,13 +1,15 @@
 import pytest
 import tempfile
 import os
-from dacp.tools import register_tool, run_tool, TOOL_REGISTRY, file_writer
+from dacp.tools import register_tool, execute_tool, TOOL_REGISTRY, file_writer
 
 
 def test_register_tool():
     """Test registering a tool."""
 
-    def test_tool(param1: str, param2: int) -> dict:
+    def test_tool(args: dict) -> dict:
+        param1 = args.get("param1", "")
+        param2 = args.get("param2", 0)
         return {"result": f"Processed {param1} with {param2}"}
 
     register_tool("test_tool", test_tool)
@@ -15,48 +17,54 @@ def test_register_tool():
     assert TOOL_REGISTRY["test_tool"] == test_tool
 
 
-def test_run_tool():
-    """Test running a registered tool."""
+def test_execute_tool():
+    """Test executing a registered tool."""
 
-    def test_tool(param1: str, param2: int) -> dict:
+    def test_tool(args: dict) -> dict:
+        param1 = args.get("param1", "")
+        param2 = args.get("param2", 0)
         return {"result": f"Processed {param1} with {param2}"}
 
     register_tool("test_tool", test_tool)
-    result = run_tool("test_tool", {"param1": "hello", "param2": 42})
+    result = execute_tool("test_tool", {"param1": "hello", "param2": 42})
     assert result["result"] == "Processed hello with 42"
 
 
-def test_run_nonexistent_tool():
-    """Test running a tool that doesn't exist."""
+def test_execute_nonexistent_tool():
+    """Test executing a tool that doesn't exist."""
     with pytest.raises(ValueError):
-        run_tool("nonexistent_tool", {})
+        execute_tool("nonexistent_tool", {})
 
 
 def test_tool_with_no_args():
-    """Test running a tool with no arguments."""
+    """Test executing a tool with no arguments."""
 
-    def no_args_tool() -> dict:
+    def no_args_tool(args: dict) -> dict:
         return {"result": "success"}
 
     register_tool("no_args_tool", no_args_tool)
-    result = run_tool("no_args_tool", {})
+    result = execute_tool("no_args_tool", {})
     assert result["result"] == "success"
 
 
 def test_tool_with_optional_args():
-    """Test running a tool with optional arguments."""
+    """Test executing a tool with optional arguments."""
 
-    def optional_args_tool(required: str, optional: str = "default") -> dict:
+    def optional_args_tool(args: dict) -> dict:
+        required = args.get("required", "")
+        optional = args.get("optional", "default")
         return {"result": f"{required}:{optional}"}
 
     register_tool("optional_args_tool", optional_args_tool)
 
     # Test with both args
-    result = run_tool("optional_args_tool", {"required": "test", "optional": "custom"})
+    result = execute_tool(
+        "optional_args_tool", {"required": "test", "optional": "custom"}
+    )
     assert result["result"] == "test:custom"
 
     # Test with only required arg
-    result = run_tool("optional_args_tool", {"required": "test"})
+    result = execute_tool("optional_args_tool", {"required": "test"})
     assert result["result"] == "test:default"
 
 
@@ -69,7 +77,7 @@ def test_file_writer_registered():
 def test_clear_tool_registry():
     """Test that we can clear and re-register tools."""
 
-    def test_tool() -> dict:
+    def test_tool(args: dict) -> dict:
         return {"result": "test"}
 
     register_tool("test_tool", test_tool)
@@ -90,7 +98,7 @@ def test_file_writer_creates_parent_directories():
         test_path = os.path.join(temp_dir, "nested", "subdir", "test.txt")
         content = "Hello, World!"
 
-        result = file_writer(test_path, content)
+        result = file_writer({"path": test_path, "content": content})
 
         assert result["success"] is True
         assert result["path"] == test_path
@@ -108,7 +116,7 @@ def test_file_writer_existing_directory():
         test_path = os.path.join(temp_dir, "test.txt")
         content = "Test content"
 
-        result = file_writer(test_path, content)
+        result = file_writer({"path": test_path, "content": content})
 
         assert result["success"] is True
         assert os.path.exists(test_path)
@@ -122,11 +130,11 @@ def test_file_writer_permission_error():
     test_path = "/root/test.txt"
     content = "This should fail"
 
-    result = file_writer(test_path, content)
+    result = file_writer({"path": test_path, "content": content})
 
     assert result["success"] is False
     assert "error" in result
-    assert "Failed to write" in result["message"]
+    assert result["path"] == test_path
 
 
 def test_file_writer_unicode_content():
@@ -135,7 +143,7 @@ def test_file_writer_unicode_content():
         test_path = os.path.join(temp_dir, "unicode_test.txt")
         content = "Hello, 世界! 🌍"
 
-        result = file_writer(test_path, content)
+        result = file_writer({"path": test_path, "content": content})
 
         assert result["success"] is True
         with open(test_path, "r", encoding="utf-8") as f:

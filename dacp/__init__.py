@@ -11,7 +11,7 @@ from .protocol import (
     is_final_response,
     get_final_response,
 )
-from .tools import register_tool, run_tool, TOOL_REGISTRY, file_writer
+from .tools import register_tool, execute_tool, TOOL_REGISTRY, file_writer
 from .llm import call_llm
 from .intelligence import invoke_intelligence
 from .orchestrator import Orchestrator, Agent
@@ -37,7 +37,7 @@ __all__ = [
     "get_final_response",
     # Tool functions
     "register_tool",
-    "run_tool",
+    "execute_tool",
     "TOOL_REGISTRY",
     "file_writer",
     # LLM functions

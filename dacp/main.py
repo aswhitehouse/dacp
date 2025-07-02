@@ -1,17 +1,9 @@
-from dacp.orchestrator import Orchestrator
+#!/usr/bin/env python3
+"""
+DACP Main Entry Point
 
+This module provides examples and testing functionality for DACP.
+"""
 
-def main():
-    orchestrator = Orchestrator()
-
-    # Agent registers itself with the orchestrator
-    hello_agent = HelloWorldAgent("hello_agent", orchestrator)
-
-    # Orchestrator sends a message to the agent and prints the response
-    input_message = {"name": "Alice"}
-    response = orchestrator.call_agent("hello_agent", input_message)
-    print("Orchestrator received:", response)
-
-
-if __name__ == "__main__":
-    main()
+print("DACP - Declarative Agent Communication Protocol")
+print("For examples, see the examples/ directory")

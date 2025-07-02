@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test test-cov lint format clean build publish
+.PHONY: help install install-dev test test-cov lint format clean build publish check
 
 help:  ## Show this help message
 	@echo 'Usage: make [target]'
@@ -46,5 +46,22 @@ check-package:  ## Check the built package
 	twine check dist/*
 
 release: clean build check-package  ## Build and check package for release
+
+check:  ## Run comprehensive checks (format, lint, test) - use before commit/push
+	@echo "🔧 Formatting code..."
+	black .
+	@echo "✅ Code formatted successfully"
+	@echo ""
+	@echo "🔍 Running linting checks..."
+	flake8 dacp/ tests/
+	black --check --diff .
+	mypy dacp/
+	@echo "✅ All linting checks passed"
+	@echo ""
+	@echo "🧪 Running tests..."
+	pytest
+	@echo "✅ All tests passed"
+	@echo ""
+	@echo "🎉 All checks passed! Ready to commit/push."
 
 all: install-dev lint test  ## Run all checks (install, lint, test) 

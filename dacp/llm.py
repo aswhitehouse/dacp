@@ -29,4 +29,11 @@ def call_llm(prompt: str, model: str = "gpt-4") -> str:
         "max_tokens": 150,
     }
 
-    return invoke_intelligence(prompt, config)
+    result = invoke_intelligence(prompt, config)
+
+    # Ensure we return a string for backward compatibility
+    if isinstance(result, str):
+        return result
+    else:
+        # If it's a dict (error response), convert to string
+        return str(result.get("error", "Unknown error occurred"))

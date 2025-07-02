@@ -1,275 +1,284 @@
 """
-DACP Orchestrator - Manages agent registration and message routing.
+DACP Orchestrator - Agent management and message routing.
+
+This module provides the core orchestrator functionality for managing agents
+and routing messages between them.
 """
 
 import logging
 import time
 from typing import Dict, Any, List, Optional
-from .tools import run_tool, TOOL_REGISTRY
-from .protocol import (
-    parse_agent_response,
-    is_tool_request,
-    get_tool_request,
-    wrap_tool_result,
-    is_final_response,
-    get_final_response,
-)
 
-# Set up logger for this module
+from .tools import execute_tool
+
 logger = logging.getLogger("dacp.orchestrator")
 
 
 class Agent:
-    """Base class for DACP agents."""
+    """
+    Base agent class that all DACP agents should inherit from.
+
+    This provides the standard interface for agent communication.
+    """
 
     def handle_message(self, message: Dict[str, Any]) -> Dict[str, Any]:
-        """Handle an incoming message. Subclasses should override this method."""
+        """
+        Handle incoming messages.
+
+        Args:
+            message: Message dictionary containing task and parameters
+
+        Returns:
+            Response dictionary with either 'response', 'tool_request', or 'error'
+        """
         raise NotImplementedError("Agents must implement handle_message method")
 
 
 class Orchestrator:
     """
     Central orchestrator for managing agents and routing messages.
+
+    The orchestrator handles agent registration, message routing, tool execution,
+    and conversation history management.
     """
 
-    def __init__(self):
-        """Initialize the orchestrator."""
-        self.agents: Dict[str, Any] = {}
+    def __init__(self, session_id: Optional[str] = None):
+        """Initialize orchestrator with optional session ID."""
+        self.agents: Dict[str, Agent] = {}
+        self.session_id = session_id or f"session_{int(time.time())}"
         self.conversation_history: List[Dict[str, Any]] = []
-        self.session_id = f"session_{int(time.time())}"
+
         logger.info(f"🎭 Orchestrator initialized with session ID: {self.session_id}")
 
-    def register_agent(self, agent_id: str, agent: Any) -> None:
+    def register_agent(self, name: str, agent: Agent) -> None:
         """
         Register an agent with the orchestrator.
 
         Args:
-            agent_id: Unique identifier for the agent
-            agent: Agent instance that implements handle_message method
+            name: Unique name for the agent
+            agent: Agent instance implementing the Agent interface
         """
-        if not hasattr(agent, "handle_message"):
-            logger.error(
-                f"❌ Agent '{agent_id}' does not implement handle_message method"
-            )
-            raise ValueError(f"Agent must implement handle_message method")
+        if not isinstance(agent, Agent):
+            raise ValueError("Agent must inherit from dacp.Agent base class")
 
-        self.agents[agent_id] = agent
+        self.agents[name] = agent
         logger.info(
-            f"✅ Agent '{agent_id}' registered successfully (type: {type(agent).__name__})"
+            f"✅ Agent '{name}' registered successfully "
+            f"(type: {type(agent).__name__})"
         )
         logger.debug(f"📊 Total registered agents: {len(self.agents)}")
 
-    def unregister_agent(self, agent_id: str) -> bool:
+    def unregister_agent(self, name: str) -> bool:
         """
         Unregister an agent from the orchestrator.
 
         Args:
-            agent_id: Unique identifier for the agent
+            name: Name of the agent to unregister
 
         Returns:
-            True if agent was successfully unregistered, False if not found
+            True if agent was unregistered, False if not found
         """
-        if agent_id in self.agents:
-            agent_type = type(self.agents[agent_id]).__name__
-            del self.agents[agent_id]
-            logger.info(
-                f"🗑️  Agent '{agent_id}' unregistered successfully (was type: {agent_type})"
-            )
-            logger.debug(f"📊 Remaining registered agents: {len(self.agents)}")
+        if name in self.agents:
+            del self.agents[name]
+            logger.info(f"🗑️  Agent '{name}' unregistered successfully")
+            logger.debug(f"📊 Remaining agents: {len(self.agents)}")
             return True
         else:
-            logger.warning(f"⚠️  Attempted to unregister unknown agent: '{agent_id}'")
+            logger.warning(f"⚠️  Agent '{name}' not found for unregistration")
             return False
 
-    def send_message(self, agent_id: str, message: Dict[str, Any]) -> Dict[str, Any]:
+    def list_agents(self) -> List[str]:
+        """Get list of registered agent names."""
+        return list(self.agents.keys())
+
+    def send_message(self, agent_name: str, message: Dict[str, Any]) -> Dict[str, Any]:
         """
         Send a message to a specific agent.
 
         Args:
-            agent_id: Target agent identifier
-            message: Message to send
+            agent_name: Name of the target agent
+            message: Message dictionary to send
 
         Returns:
-            Response from the agent (or error if agent not found)
+            Response from the agent after processing
         """
-        logger.info(f"📨 Sending message to agent '{agent_id}'")
+        start_time = time.time()
+
+        logger.info(f"📨 Sending message to agent '{agent_name}'")
         logger.debug(f"📋 Message content: {message}")
 
-        if agent_id not in self.agents:
-            error_msg = f"Agent '{agent_id}' not found"
+        if agent_name not in self.agents:
+            error_msg = f"Agent '{agent_name}' not found"
             logger.error(f"❌ {error_msg}")
-            logger.debug(f"📊 Available agents: {list(self.agents.keys())}")
             return {"error": error_msg}
 
-        agent = self.agents[agent_id]
+        agent = self.agents[agent_name]
 
         try:
-            start_time = time.time()
-            logger.debug(f"🔄 Calling handle_message on agent '{agent_id}'")
+            logger.debug(f"🔄 Calling handle_message on agent '{agent_name}'")
 
+            # Call the agent's message handler
             response = agent.handle_message(message)
 
-            processing_time = time.time() - start_time
-            logger.info(f"✅ Agent '{agent_id}' responded in {processing_time:.3f}s")
+            duration = time.time() - start_time
+            logger.info(f"✅ Agent '{agent_name}' responded in {duration:.3f}s")
             logger.debug(f"📤 Agent response: {response}")
 
-            # Check if agent requested a tool
-            if is_tool_request(response):
-                logger.info(f"🔧 Agent '{agent_id}' requested tool execution")
-                tool_name, tool_args = get_tool_request(response)
-                logger.info(f"🛠️  Executing tool: '{tool_name}' with args: {tool_args}")
+            # Check if agent requested tool execution
+            if isinstance(response, dict) and "tool_request" in response:
+                logger.info(f"🔧 Agent '{agent_name}' requested tool execution")
+                response = self._handle_tool_request(
+                    agent_name, response["tool_request"]
+                )
 
-                if tool_name in TOOL_REGISTRY:
-                    try:
-                        tool_start_time = time.time()
-                        tool_result = run_tool(tool_name, tool_args)
-                        tool_execution_time = time.time() - tool_start_time
+            # Log the conversation
+            self._log_conversation(agent_name, message, response, duration)
 
-                        logger.info(
-                            f"✅ Tool '{tool_name}' executed successfully in {tool_execution_time:.3f}s"
-                        )
-                        logger.debug(f"🔧 Tool result: {tool_result}")
-
-                        wrapped_result = wrap_tool_result(tool_name, tool_result)
-
-                        # Log the conversation
-                        self._log_conversation(
-                            agent_id, message, wrapped_result, tool_used=tool_name
-                        )
-
-                        return wrapped_result
-
-                    except Exception as e:
-                        error_msg = f"Tool '{tool_name}' execution failed: {str(e)}"
-                        logger.error(f"❌ {error_msg}")
-                        error_response = {"error": error_msg}
-                        self._log_conversation(
-                            agent_id, message, error_response, tool_used=tool_name
-                        )
-                        return error_response
-                else:
-                    error_msg = f"Unknown tool requested: '{tool_name}'"
-                    logger.error(f"❌ {error_msg}")
-                    logger.debug(f"📊 Available tools: {list(TOOL_REGISTRY.keys())}")
-                    error_response = {"error": error_msg}
-                    self._log_conversation(agent_id, message, error_response)
-                    return error_response
-
-            # Log successful conversation
-            self._log_conversation(agent_id, message, response)
             return response
 
         except Exception as e:
-            error_msg = f"Agent '{agent_id}' error: {str(e)}"
+            duration = time.time() - start_time
+            error_msg = f"Error in agent '{agent_name}': {type(e).__name__}: {e}"
             logger.error(f"❌ {error_msg}")
-            logger.debug(f"🐛 Exception details: {type(e).__name__}: {e}")
+            logger.debug("💥 Exception details", exc_info=True)
+
             error_response = {"error": error_msg}
-            self._log_conversation(agent_id, message, error_response)
+            self._log_conversation(agent_name, message, error_response, duration)
+
             return error_response
 
-    def broadcast_message(
-        self, message: Dict[str, Any], exclude_agents: Optional[List[str]] = None
-    ) -> Dict[str, Dict[str, Any]]:
+    def broadcast_message(self, message: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Send a message to all registered agents (optionally excluding some).
+        Send a message to all registered agents.
 
         Args:
-            message: Message to broadcast
-            exclude_agents: List of agent IDs to exclude from broadcast
+            message: Message dictionary to broadcast
 
         Returns:
-            Dict mapping agent IDs to their responses
+            Dictionary mapping agent names to their responses
         """
-        exclude_agents = exclude_agents or []
-        target_agents = [aid for aid in self.agents.keys() if aid not in exclude_agents]
-
-        logger.info(f"📡 Broadcasting message to {len(target_agents)} agents")
-        logger.debug(f"🎯 Target agents: {target_agents}")
-        if exclude_agents:
-            logger.debug(f"🚫 Excluded agents: {exclude_agents}")
+        logger.info(f"📢 Broadcasting message to {len(self.agents)} agents")
+        logger.debug(f"📋 Broadcast message: {message}")
 
         responses = {}
         start_time = time.time()
 
-        for agent_id in target_agents:
-            logger.debug(f"📨 Broadcasting to agent '{agent_id}'")
-            responses[agent_id] = self.send_message(agent_id, message)
+        for agent_name in self.agents:
+            logger.debug(f"📨 Broadcasting to agent '{agent_name}'")
+            responses[agent_name] = self.send_message(agent_name, message)
 
-        broadcast_time = time.time() - start_time
-        logger.info(f"✅ Broadcast completed in {broadcast_time:.3f}s")
+        duration = time.time() - start_time
+        logger.info(
+            f"✅ Broadcast completed in {duration:.3f}s "
+            f"({len(responses)} responses)"
+        )
 
         return responses
 
-    def get_conversation_history(
-        self, agent_id: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+    def _handle_tool_request(
+        self, agent_name: str, tool_request: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
-        Get conversation history, optionally filtered by agent.
+        Handle tool execution request from an agent.
 
         Args:
-            agent_id: Optional agent ID to filter by
+            agent_name: Name of the requesting agent
+            tool_request: Tool request dictionary with 'name' and 'args'
+
+        Returns:
+            Tool execution result
+        """
+        tool_name = tool_request.get("name")
+        tool_args = tool_request.get("args", {})
+
+        if not tool_name:
+            return {"error": "Tool name is required"}
+
+        logger.info(f"🛠️  Executing tool: '{tool_name}' with args: {tool_args}")
+
+        start_time = time.time()
+
+        try:
+            result = execute_tool(tool_name, tool_args)
+            duration = time.time() - start_time
+
+            logger.info(
+                f"✅ Tool '{tool_name}' executed successfully in {duration:.3f}s"
+            )
+            logger.debug(f"🔧 Tool result: {result}")
+
+            return {"tool_result": {"name": tool_name, "result": result}}
+
+        except Exception as e:
+            duration = time.time() - start_time
+            error_msg = f"Tool '{tool_name}' failed: {type(e).__name__}: {e}"
+            logger.error(f"❌ {error_msg}")
+
+            return {"error": error_msg}
+
+    def _log_conversation(
+        self,
+        agent_name: str,
+        message: Dict[str, Any],
+        response: Dict[str, Any],
+        duration: float,
+    ) -> None:
+        """Log conversation entry to history."""
+        logger.debug("💾 Logging conversation entry")
+
+        entry = {
+            "timestamp": time.time(),
+            "session_id": self.session_id,
+            "agent_name": agent_name,
+            "message": message,
+            "response": response,
+            "duration": duration,
+        }
+
+        self.conversation_history.append(entry)
+
+        # Keep history manageable (last 1000 entries)
+        if len(self.conversation_history) > 1000:
+            self.conversation_history = self.conversation_history[-1000:]
+            logger.debug("🗂️  Conversation history trimmed to 1000 entries")
+
+    def get_conversation_history(
+        self, limit: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Get conversation history.
+
+        Args:
+            limit: Maximum number of entries to return (None for all)
 
         Returns:
             List of conversation entries
         """
-        if agent_id is None:
-            logger.debug(
-                f"📚 Retrieving full conversation history ({len(self.conversation_history)} entries)"
-            )
+        if limit is None:
             return self.conversation_history.copy()
         else:
-            filtered_history = [
-                entry
-                for entry in self.conversation_history
-                if entry.get("agent_id") == agent_id
-            ]
-            logger.debug(
-                f"📚 Retrieving conversation history for '{agent_id}' ({len(filtered_history)} entries)"
-            )
-            return filtered_history
+            return self.conversation_history[-limit:].copy()
 
-    def clear_history(self) -> None:
-        """Clear the conversation history."""
-        old_count = len(self.conversation_history)
+    def clear_conversation_history(self) -> None:
+        """Clear conversation history."""
         self.conversation_history.clear()
-        logger.info(f"🗑️  Conversation history cleared ({old_count} entries removed)")
+        logger.info("🗑️  Conversation history cleared")
 
-    def get_session_info(self) -> Dict[str, Any]:
-        """
-        Get current session information.
-
-        Returns:
-            Dict containing session metadata
-        """
-        info = {
+    def get_session_metadata(self) -> Dict[str, Any]:
+        """Get session metadata and statistics."""
+        return {
             "session_id": self.session_id,
-            "registered_agents": list(self.agents.keys()),
-            "conversation_count": len(self.conversation_history),
-            "available_tools": list(TOOL_REGISTRY.keys()),
+            "registered_agents": len(self.agents),
+            "agent_names": list(self.agents.keys()),
+            "conversation_entries": len(self.conversation_history),
+            "start_time": (
+                self.conversation_history[0]["timestamp"]
+                if self.conversation_history
+                else None
+            ),
+            "last_activity": (
+                self.conversation_history[-1]["timestamp"]
+                if self.conversation_history
+                else None
+            ),
         }
-        logger.debug(f"📊 Session info requested: {info}")
-        return info
-
-    def _log_conversation(
-        self,
-        agent_id: str,
-        message: Dict[str, Any],
-        response: Dict[str, Any],
-        tool_used: Optional[str] = None,
-    ) -> None:
-        """Log a conversation entry."""
-        entry = {
-            "timestamp": time.time(),
-            "agent_id": agent_id,
-            "message": message,
-            "response": response,
-            "session_id": self.session_id,
-        }
-
-        if tool_used:
-            entry["tool_used"] = tool_used
-            logger.debug(f"💾 Logging conversation with tool usage: {tool_used}")
-        else:
-            logger.debug(f"💾 Logging conversation entry")
-
-        self.conversation_history.append(entry)
