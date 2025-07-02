@@ -4,95 +4,80 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dacp"
-version = "0.1.0"
-description = "DACP - Declarative Agent Communication Protocol for LLM/agent communications and tool function calls"
+version = "0.3.0"
+description = "Declarative Agent Communication Protocol - A protocol for managing LLM/agent communications and tool function calls"
 readme = "README.md"
-requires-python = ">=3.8"
 license = {text = "MIT"}
 authors = [
-    {name = "Your Name", email = "your.email@example.com"}
+    {name = "Andrew Whitehouse", email = "andrew.whitehouse@example.com"}
 ]
-keywords = ["llm", "agent", "tools", "openai", "communication"]
+keywords = ["llm", "agent", "communication", "protocol", "ai", "ml"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.9", 
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
-
+requires-python = ">=3.8"
 dependencies = [
-    "openai>=1.0.0",
+    "requests>=2.25.0",
+    "pyyaml>=5.4.0",
 ]
 
 [project.optional-dependencies]
+openai = ["openai>=1.0.0"]
+anthropic = ["anthropic>=0.18.0"]
+local = ["requests>=2.25.0"]
+all = [
+    "openai>=1.0.0",
+    "anthropic>=0.18.0",
+]
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
     "black>=22.0.0",
-    "flake8>=5.0.0",
+    "flake8>=4.0.0",
     "mypy>=1.0.0",
-    "types-requests>=2.28.0",
+    "types-requests>=2.25.0",
+    "types-PyYAML>=6.0.0",
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/dacp"
-Repository = "https://github.com/yourusername/dacp"
-Issues = "https://github.com/yourusername/dacp/issues"
+Homepage = "https://github.com/andrewwhitehouse/dacp"
+Repository = "https://github.com/andrewwhitehouse/dacp"
+Documentation = "https://github.com/andrewwhitehouse/dacp#readme"
+Issues = "https://github.com/andrewwhitehouse/dacp/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["dacp*"]
-exclude = ["tests*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --cov=dacp --cov-report=term-missing"
 
 [tool.black]
 line-length = 88
 target-version = ['py38']
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-addopts = "--cov=dacp --cov-report=term-missing --cov-report=html"
-
-[tool.coverage.run]
-source = ["dacp"]
-omit = ["tests/*"]
-
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "if self.debug:",
-    "if settings.DEBUG",
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "if 0:",
-    "if __name__ == .__main__.:",
-    "class .*\\bProtocol\\):",
-    "@(abc\\.)?abstractmethod",
-]
-
-[tool.flake8]
-max-line-length = 88
-
 [tool.mypy]
 python_version = "3.8"
+strict = true
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
-check_untyped_defs = true
-disallow_untyped_decorators = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
-warn_unreachable = true
-strict_equality = true
 
 [[tool.mypy.overrides]]
 module = [

@@ -1,0 +1,63 @@
+# Open Agent Specification with DACP Logging Configuration
+apiVersion: "v1"
+kind: "Agent"
+metadata:
+  name: "data-analysis-agent"
+  version: "1.0.0"
+  type: "smart_analysis"  # Used by factory function to create appropriate agent class
+  description: "Agent for data analysis with comprehensive logging"
+
+# Intelligence configuration (your existing pattern)
+intelligence:
+  engine: "anthropic"
+  model: "claude-3-haiku-20240618"
+  endpoint: "https://api.anthropic.com/v1"
+  temperature: 0.7
+  max_tokens: 500
+  # API key loaded from environment: ANTHROPIC_API_KEY
+
+# DACP Logging Configuration
+logging:
+  enabled: true
+  level: "INFO"                    # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format_style: "emoji"            # emoji, detailed, simple
+  include_timestamp: true
+  log_file: "./logs/agent.log"     # Optional: also log to file
+  
+  # Environment variable overrides
+  env_overrides:
+    level: "DACP_LOG_LEVEL"        # Allow env var to override
+    format_style: "DACP_LOG_STYLE"
+    log_file: "DACP_LOG_FILE"
+
+# Agent capabilities
+capabilities:
+  - name: "analyze_data"
+    description: "Analyze datasets and generate insights"
+    
+  - name: "generate_report"
+    description: "Generate analysis reports"
+    
+  - name: "visualize_data"
+    description: "Create data visualizations"
+
+# Tools configuration
+tools:
+  - name: "file_writer"
+    enabled: true
+    
+  - name: "data_processor"
+    enabled: true
+    config:
+      max_rows: 10000
+
+# Runtime configuration
+runtime:
+  timeout: 30                      # seconds
+  max_retries: 3
+  
+# Development/Debug settings
+development:
+  debug_mode: false
+  profiling: false
+  test_mode: false 
