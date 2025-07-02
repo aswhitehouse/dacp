@@ -128,7 +128,7 @@ def _invoke_openai(prompt: str, config: Dict[str, Any]) -> str:
     if content is None:
         raise ValueError("OpenAI returned empty response")
 
-    return content
+    return str(content)
 
 
 def _invoke_anthropic(prompt: str, config: Dict[str, Any]) -> str:
@@ -175,7 +175,7 @@ def _invoke_anthropic(prompt: str, config: Dict[str, Any]) -> str:
     # Get text from first content block
     content_block = response.content[0]
     if hasattr(content_block, "text"):
-        return content_block.text
+        return str(content_block.text)
     else:
         raise ValueError("Anthropic returned unexpected response format")
 
@@ -233,7 +233,7 @@ def _invoke_azure_openai(prompt: str, config: Dict[str, Any]) -> str:
     if content is None:
         raise ValueError("Azure OpenAI returned empty response")
 
-    return content
+    return str(content)
 
 
 def _invoke_local(prompt: str, config: Dict[str, Any]) -> str:
