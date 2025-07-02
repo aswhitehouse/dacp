@@ -1,5 +1,6 @@
 from dacp.orchestrator import Orchestrator
 
+
 def main():
     orchestrator = Orchestrator()
 
@@ -10,6 +11,7 @@ def main():
     input_message = {"name": "Alice"}
     response = orchestrator.call_agent("hello_agent", input_message)
     print("Orchestrator received:", response)
+
 
 if __name__ == "__main__":
     main()

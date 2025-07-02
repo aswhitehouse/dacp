@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dacp"
-version = "0.3.0"
+version = "0.3.1"
 description = "Declarative Agent Communication Protocol - A protocol for managing LLM/agent communications and tool function calls"
 readme = "README.md"
 license = {text = "MIT"}

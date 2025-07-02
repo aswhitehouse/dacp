@@ -11,7 +11,9 @@ TOOL_REGISTRY: Dict[str, Callable[..., Dict[str, Any]]] = {}
 def register_tool(tool_id: str, func: Callable[..., Dict[str, Any]]) -> None:
     """Register a tool function."""
     TOOL_REGISTRY[tool_id] = func
-    logger.info(f"🔧 Tool '{tool_id}' registered successfully (function: {func.__name__})")
+    logger.info(
+        f"🔧 Tool '{tool_id}' registered successfully (function: {func.__name__})"
+    )
     logger.debug(f"📊 Total registered tools: {len(TOOL_REGISTRY)}")
 
 
@@ -24,19 +26,24 @@ def run_tool(tool_id: str, args: Dict[str, Any]) -> Dict[str, Any]:
 
     tool_func = TOOL_REGISTRY[tool_id]
     logger.debug(f"🛠️  Executing tool '{tool_id}' with args: {args}")
-    
+
     import time
+
     start_time = time.time()
-    
+
     try:
         result = tool_func(**args)
         execution_time = time.time() - start_time
-        logger.info(f"✅ Tool '{tool_id}' executed successfully in {execution_time:.3f}s")
+        logger.info(
+            f"✅ Tool '{tool_id}' executed successfully in {execution_time:.3f}s"
+        )
         logger.debug(f"🔧 Tool result: {result}")
         return result
     except Exception as e:
         execution_time = time.time() - start_time
-        logger.error(f"❌ Tool '{tool_id}' failed after {execution_time:.3f}s: {type(e).__name__}: {e}")
+        logger.error(
+            f"❌ Tool '{tool_id}' failed after {execution_time:.3f}s: {type(e).__name__}: {e}"
+        )
         raise
 
 
@@ -52,7 +59,7 @@ def file_writer(path: str, content: str) -> Dict[str, Any]:
         Dict with success status and file path
     """
     logger.debug(f"📝 Writing to file: {path} ({len(content)} characters)")
-    
+
     try:
         # Create parent directories if they don't exist
         parent_dir = Path(path).parent

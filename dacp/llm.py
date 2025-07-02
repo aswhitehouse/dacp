@@ -9,13 +9,13 @@ from .intelligence import invoke_intelligence
 
 def call_llm(prompt: str, model: str = "gpt-4") -> str:
     """
-    Legacy function for calling LLMs. 
+    Legacy function for calling LLMs.
     Maintained for backward compatibility.
-    
+
     Args:
         prompt: The input prompt
         model: The model to use (defaults to gpt-4)
-        
+
     Returns:
         Response from the LLM
     """
@@ -26,7 +26,7 @@ def call_llm(prompt: str, model: str = "gpt-4") -> str:
         "api_key": os.getenv("OPENAI_API_KEY"),
         "endpoint": "https://api.openai.com/v1",
         "temperature": 0.7,
-        "max_tokens": 150
+        "max_tokens": 150,
     }
-    
+
     return invoke_intelligence(prompt, config)

@@ -11,9 +11,7 @@ from .protocol import (
     is_final_response,
     get_final_response,
 )
-from .tools import (
-    register_tool, run_tool, TOOL_REGISTRY, file_writer
-)
+from .tools import register_tool, run_tool, TOOL_REGISTRY, file_writer
 from .llm import call_llm
 from .intelligence import invoke_intelligence
 from .orchestrator import Orchestrator, Agent
@@ -32,7 +30,7 @@ __version__ = "0.3.0"
 __all__ = [
     # Protocol functions
     "parse_agent_response",
-    "is_tool_request", 
+    "is_tool_request",
     "get_tool_request",
     "wrap_tool_result",
     "is_final_response",

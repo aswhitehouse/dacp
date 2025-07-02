@@ -16,7 +16,7 @@ from dacp.intelligence import (
     _invoke_openai,
     _invoke_anthropic,
     _invoke_azure_openai,
-    _invoke_local
+    _invoke_local,
 )
 
 
@@ -32,56 +32,58 @@ class TestInvokeIntelligence:
     def test_unsupported_engine_raises_error(self):
         """Test that unsupported engine raises UnsupportedProviderError."""
         config = {"engine": "unsupported_engine"}
-        with pytest.raises(UnsupportedProviderError, match="Unsupported intelligence engine"):
+        with pytest.raises(
+            UnsupportedProviderError, match="Unsupported intelligence engine"
+        ):
             invoke_intelligence("test prompt", config)
 
-    @patch('dacp.intelligence._invoke_openai')
+    @patch("dacp.intelligence._invoke_openai")
     def test_openai_engine_calls_correct_function(self, mock_openai):
         """Test that OpenAI engine calls the correct function."""
         mock_openai.return_value = "OpenAI response"
         config = {"engine": "openai", "model": "gpt-4"}
-        
+
         result = invoke_intelligence("test prompt", config)
-        
+
         assert result == "OpenAI response"
         mock_openai.assert_called_once_with("test prompt", config)
 
-    @patch('dacp.intelligence._invoke_anthropic')
+    @patch("dacp.intelligence._invoke_anthropic")
     def test_anthropic_engine_calls_correct_function(self, mock_anthropic):
         """Test that Anthropic engine calls the correct function."""
         mock_anthropic.return_value = "Anthropic response"
         config = {"engine": "anthropic", "model": "claude-3-haiku-20240307"}
-        
+
         result = invoke_intelligence("test prompt", config)
-        
+
         assert result == "Anthropic response"
         mock_anthropic.assert_called_once_with("test prompt", config)
 
-    @patch('dacp.intelligence._invoke_azure_openai')
+    @patch("dacp.intelligence._invoke_azure_openai")
     def test_azure_engine_calls_correct_function(self, mock_azure):
         """Test that Azure engine calls the correct function."""
         mock_azure.return_value = "Azure response"
         config = {"engine": "azure", "model": "gpt-4"}
-        
+
         result = invoke_intelligence("test prompt", config)
-        
+
         assert result == "Azure response"
         mock_azure.assert_called_once_with("test prompt", config)
 
-    @patch('dacp.intelligence._invoke_local')
+    @patch("dacp.intelligence._invoke_local")
     def test_local_engine_calls_correct_function(self, mock_local):
         """Test that local engine calls the correct function."""
         mock_local.return_value = "Local response"
         config = {"engine": "local", "model": "llama2"}
-        
+
         result = invoke_intelligence("test prompt", config)
-        
+
         assert result == "Local response"
         mock_local.assert_called_once_with("test prompt", config)
 
     def test_engine_case_insensitive(self):
         """Test that engine names are case insensitive."""
-        with patch('dacp.intelligence._invoke_openai') as mock_openai:
+        with patch("dacp.intelligence._invoke_openai") as mock_openai:
             mock_openai.return_value = "response"
             config = {"engine": "OPENAI", "model": "gpt-4"}
             invoke_intelligence("test", config)
@@ -91,7 +93,7 @@ class TestInvokeIntelligence:
 class TestOpenAIProvider:
     """Test the OpenAI provider."""
 
-    @patch('dacp.intelligence.openai')
+    @patch("dacp.intelligence.openai")
     def test_openai_success(self, mock_openai_module):
         """Test successful OpenAI call."""
         # Setup mock
@@ -101,29 +103,28 @@ class TestOpenAIProvider:
         mock_response.choices[0].message.content = "OpenAI response"
         mock_client.chat.completions.create.return_value = mock_response
         mock_openai_module.OpenAI.return_value = mock_client
-        
+
         config = {
             "model": "gpt-4",
             "api_key": "test-key",
             "endpoint": "https://api.openai.com/v1",
             "temperature": 0.5,
-            "max_tokens": 100
+            "max_tokens": 100,
         }
-        
+
         result = _invoke_openai("test prompt", config)
-        
+
         assert result == "OpenAI response"
         mock_openai_module.OpenAI.assert_called_once_with(
-            api_key="test-key",
-            base_url="https://api.openai.com/v1"
+            api_key="test-key", base_url="https://api.openai.com/v1"
         )
 
-    @patch('dacp.intelligence.openai')
+    @patch("dacp.intelligence.openai")
     def test_openai_missing_package(self, mock_openai_module):
         """Test OpenAI with missing package."""
         mock_openai_module.side_effect = ImportError()
         config = {"api_key": "test-key"}
-        
+
         with pytest.raises(IntelligenceError, match="OpenAI package not installed"):
             _invoke_openai("test", config)
 
@@ -135,7 +136,7 @@ class TestOpenAIProvider:
                 _invoke_openai("test", config)
 
     @patch.dict(os.environ, {"OPENAI_API_KEY": "env-key"})
-    @patch('dacp.intelligence.openai')
+    @patch("dacp.intelligence.openai")
     def test_openai_uses_env_key(self, mock_openai_module):
         """Test OpenAI uses environment variable for API key."""
         mock_client = Mock()
@@ -144,20 +145,19 @@ class TestOpenAIProvider:
         mock_response.choices[0].message.content = "response"
         mock_client.chat.completions.create.return_value = mock_response
         mock_openai_module.OpenAI.return_value = mock_client
-        
+
         config = {"model": "gpt-4"}
         _invoke_openai("test", config)
-        
+
         mock_openai_module.OpenAI.assert_called_once_with(
-            api_key="env-key",
-            base_url="https://api.openai.com/v1"
+            api_key="env-key", base_url="https://api.openai.com/v1"
         )
 
 
 class TestAnthropicProvider:
     """Test the Anthropic provider."""
 
-    @patch('dacp.intelligence.anthropic')
+    @patch("dacp.intelligence.anthropic")
     def test_anthropic_success(self, mock_anthropic_module):
         """Test successful Anthropic call."""
         mock_client = Mock()
@@ -166,25 +166,25 @@ class TestAnthropicProvider:
         mock_response.content[0].text = "Anthropic response"
         mock_client.messages.create.return_value = mock_response
         mock_anthropic_module.Anthropic.return_value = mock_client
-        
+
         config = {
             "model": "claude-3-haiku-20240307",
             "api_key": "test-key",
             "endpoint": "https://api.anthropic.com",
             "temperature": 0.5,
-            "max_tokens": 100
+            "max_tokens": 100,
         }
-        
+
         result = _invoke_anthropic("test prompt", config)
-        
+
         assert result == "Anthropic response"
 
-    @patch('dacp.intelligence.anthropic')
+    @patch("dacp.intelligence.anthropic")
     def test_anthropic_missing_package(self, mock_anthropic_module):
         """Test Anthropic with missing package."""
         mock_anthropic_module.side_effect = ImportError()
         config = {"api_key": "test-key"}
-        
+
         with pytest.raises(IntelligenceError, match="Anthropic package not installed"):
             _invoke_anthropic("test", config)
 
@@ -199,45 +199,39 @@ class TestAnthropicProvider:
 class TestLocalProvider:
     """Test the local provider."""
 
-    @patch('dacp.intelligence.requests')
+    @patch("dacp.intelligence.requests")
     def test_local_ollama_success(self, mock_requests):
         """Test successful local Ollama call."""
         mock_response = Mock()
         mock_response.json.return_value = {"response": "Local response"}
         mock_requests.post.return_value = mock_response
-        
-        config = {
-            "endpoint": "http://localhost:11434/api/generate",
-            "model": "llama2"
-        }
-        
+
+        config = {"endpoint": "http://localhost:11434/api/generate", "model": "llama2"}
+
         result = _invoke_local("test prompt", config)
-        
+
         assert result == "Local response"
 
-    @patch('dacp.intelligence.requests')
+    @patch("dacp.intelligence.requests")
     def test_local_generic_success(self, mock_requests):
         """Test successful generic local API call."""
         mock_response = Mock()
         mock_response.json.return_value = {"text": "Generic response"}
         mock_requests.post.return_value = mock_response
-        
-        config = {
-            "endpoint": "http://localhost:8080/generate",
-            "model": "custom-model"
-        }
-        
+
+        config = {"endpoint": "http://localhost:8080/generate", "model": "custom-model"}
+
         result = _invoke_local("test prompt", config)
-        
+
         assert result == "Generic response"
 
-    @patch('dacp.intelligence.requests')
+    @patch("dacp.intelligence.requests")
     def test_local_request_error(self, mock_requests):
         """Test local provider request error."""
         mock_requests.post.side_effect = Exception("Connection error")
-        
+
         config = {"endpoint": "http://localhost:11434/api/generate"}
-        
+
         with pytest.raises(IntelligenceError, match="Local provider error"):
             _invoke_local("test", config)
 
@@ -264,7 +258,9 @@ class TestConfigValidation:
 
     def test_validate_non_dict_config(self):
         """Test validation with non-dictionary config."""
-        with pytest.raises(ConfigurationError, match="Configuration must be a dictionary"):
+        with pytest.raises(
+            ConfigurationError, match="Configuration must be a dictionary"
+        ):
             validate_config("not a dict")
 
     @patch.dict(os.environ, {}, clear=True)
@@ -292,4 +288,4 @@ def test_get_supported_engines():
     """Test getting supported engines."""
     engines = get_supported_engines()
     expected = ["openai", "anthropic", "azure", "local"]
-    assert engines == expected 
+    assert engines == expected
