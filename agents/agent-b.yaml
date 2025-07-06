@@ -38,7 +38,7 @@ tasks:
         sender_agent:
           type: string
           description: The name of the agent who sent the greeting
-      required: [greeting_message, target_agent]
+      required: [greeting_message, sender_agent]  # ✅ Fixed: matches properties
     output:
       type: object
       properties:
@@ -48,7 +48,7 @@ tasks:
         sender_agent:
           type: string
           description: The original sender agent name
-      required: [response_message, target_agent]
+      required: [response_message, sender_agent]  # ✅ Fixed: matches properties
 
 prompts:
   system: >

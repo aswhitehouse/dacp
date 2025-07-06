@@ -186,18 +186,24 @@ def main():
             
             print("🗣️  AGENT-TO-AGENT CONVERSATION:")
             print(f"\n   Agent A (greeting-initiator-agent):")
-            if agent_a_task.get('output_data', {}).get('greeting_message'):
+            if agent_a_task and agent_a_task.get('output_data', {}).get('greeting_message'):
                 greeting = agent_a_task['output_data']['greeting_message']
                 print(f"      💬 \"{greeting}\"")
             
             print(f"\n   Agent B (greeting-responder-agent):")
-            if agent_b_task.get('output_data', {}).get('response_message'):
+            if agent_b_task and agent_b_task.get('output_data', {}).get('response_message'):
                 response = agent_b_task['output_data']['response_message']
                 print(f"      💬 \"{response}\"")
+            elif agent_b_task and agent_b_task.get('status') == 'failed':
+                print(f"      ❌ Task failed: {agent_b_task.get('error', 'Unknown error')}")
             
-            print(f"\n✅ Total conversation time: {agent_a_task.get('duration', 0) + agent_b_task.get('duration', 0):.2f} seconds")
-            print(f"✅ Both agents used GPT-4 for real-time responses")
-            print(f"✅ Agent-to-agent communication successful")
+            if agent_a_task and agent_b_task:
+                print(f"\n✅ Total conversation time: {agent_a_task.get('duration', 0) + agent_b_task.get('duration', 0):.2f} seconds")
+                print(f"✅ Both agents used GPT-4 for real-time responses")
+                if agent_b_task.get('status') == 'completed':
+                    print(f"✅ Agent-to-agent communication successful")
+                else:
+                    print(f"⚠️  Agent-to-agent communication partially successful (Agent B failed)")
         
         print_section("DEMONSTRATION COMPLETED", 
                       "✅ Verbose workflow execution completed successfully!")
