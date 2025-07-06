@@ -1,0 +1,21 @@
+# orchestrator-config.yaml
+agents:
+  - id: greeting-initiator-agent
+    spec: greeting-initiator-agent.yaml
+  - id: greeting-responder-agent
+    spec: greeting-responder-agent.yaml
+
+workflows:
+  greeting_conversation:
+    description: "Simple Q&A greeting flow"
+    steps:
+      - agent: greeting-initiator-agent
+        task: initiate_greeting
+        input:
+          target_agent: greeting-responder-agent
+        route_output_to:
+          agent: greeting-responder-agent
+          task: respond_to_greeting
+          input_mapping:
+            greeting_message: "{{output.greeting_message}}"
+            sender_agent: greeting-initiator-agent

@@ -120,6 +120,17 @@ class Orchestrator:
             # Call the agent's message handler
             response = agent.handle_message(message)
 
+            # Handle Pydantic models by converting to dict
+            if hasattr(response, 'model_dump'):
+                logger.debug(f"📊 Converting Pydantic model to dict: {type(response).__name__}")
+                response = response.model_dump()
+            elif not isinstance(response, dict):
+                logger.debug(f"📊 Converting response to dict: {type(response)}")
+                if hasattr(response, '__dict__'):
+                    response = response.__dict__
+                else:
+                    response = {"result": str(response)}
+
             duration = time.time() - start_time
             logger.info(f"✅ Agent '{agent_name}' responded in {duration:.3f}s")
             logger.debug(f"📤 Agent response: {response}")
@@ -229,6 +240,7 @@ class Orchestrator:
         entry = {
             "timestamp": time.time(),
             "session_id": self.session_id,
+            "agent": agent_name,
             "agent_name": agent_name,
             "message": message,
             "response": response,

@@ -24,6 +24,28 @@ from .logging_config import (
     disable_dacp_logging,
     enable_dacp_logging,
 )
+from .json_parser import (
+    robust_json_parse,
+    parse_with_fallback,
+    extract_json_from_text,
+    create_fallback_response,
+)
+from .workflow import (
+    WorkflowOrchestrator,
+    TaskBoard,
+    Task,
+    TaskStatus,
+    TaskPriority,
+    WorkflowRule,
+)
+from .workflow_runtime import (
+    WorkflowRuntime,
+    AgentRegistry,
+    TaskRegistry,
+    TaskExecution,
+    RegisteredAgent,
+    TaskStatus as RuntimeTaskStatus,
+)
 
 __version__ = "0.3.0"
 
@@ -54,4 +76,23 @@ __all__ = [
     "set_dacp_log_level",
     "disable_dacp_logging",
     "enable_dacp_logging",
+    # JSON parsing utilities
+    "robust_json_parse",
+    "parse_with_fallback",
+    "extract_json_from_text",
+    "create_fallback_response",
+    # Workflow management
+    "WorkflowOrchestrator",
+    "TaskBoard",
+    "Task",
+    "TaskStatus",
+    "TaskPriority",
+    "WorkflowRule",
+    # Workflow runtime
+    "WorkflowRuntime",
+    "AgentRegistry",
+    "TaskRegistry",
+    "TaskExecution",
+    "RegisteredAgent",
+    "RuntimeTaskStatus",
 ]
