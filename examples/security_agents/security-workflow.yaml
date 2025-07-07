@@ -1,0 +1,53 @@
+# Security Incident Analysis Workflow - DACP Configuration
+agents:
+  - id: threat-analyzer
+    spec: threat-analyzer.yaml
+  - id: risk-assessor
+    spec: risk-assessor.yaml
+
+workflows:
+  security_incident_analysis:
+    description: "Analyzes security events and assesses organizational risk"
+    steps:
+      # Step 1: Threat Analysis
+      - agent: threat-analyzer
+        task: analyze_security_event
+        input:
+          event_type: "{{event_type}}"
+          event_details: "{{event_details}}"
+          source_ip: "{{source_ip}}"
+          timestamp: "{{timestamp}}"
+        route_output_to:
+          agent: risk-assessor
+          task: assess_threat_risk
+          input_mapping:
+            # Pass all threat analysis outputs to risk assessor
+            threat_identified: "{{output.threat_identified}}"
+            threat_type: "{{output.threat_type}}"
+            threat_severity: "{{output.threat_severity}}"
+            threat_indicators: "{{output.threat_indicators}}"
+            analysis_summary: "{{output.analysis_summary}}"
+            # Add context about affected assets
+            asset_context: "{{asset_context}}"
+            
+  rapid_threat_response:
+    description: "Quick threat analysis with automatic risk assessment"
+    steps:
+      # Parallel analysis for faster response
+      - agent: threat-analyzer
+        task: analyze_security_event
+        input:
+          event_type: "{{event_type}}"
+          event_details: "{{event_details}}"
+          source_ip: "{{source_ip}}"
+          timestamp: "{{timestamp}}"
+        route_output_to:
+          agent: risk-assessor
+          task: assess_threat_risk
+          input_mapping:
+            threat_identified: "{{output.threat_identified}}"
+            threat_type: "{{output.threat_type}}"
+            threat_severity: "{{output.threat_severity}}"
+            threat_indicators: "{{output.threat_indicators}}"
+            analysis_summary: "{{output.analysis_summary}}"
+            asset_context: "Critical customer database"

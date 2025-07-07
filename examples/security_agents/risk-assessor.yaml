@@ -1,0 +1,150 @@
+open_agent_spec: 1.0.8
+
+agent:
+  name: risk-assessor
+  description: Evaluates threat analysis and determines risk level with mitigation recommendations
+  role: analyst
+
+intelligence:
+  type: llm
+  engine: anthropic
+  model: claude-3-5-sonnet-20241022
+  config:
+    temperature: 0.2
+    max_tokens: 1500
+
+logging:
+  enabled: true
+  level: "INFO"
+  format_style: "emoji"
+  include_timestamp: true
+  log_file: "./logs/risk-assessor.log"
+
+tasks:
+  assess_threat_risk:
+    description: Evaluate threat analysis and determine organizational risk with recommendations
+    input:
+      type: object
+      properties:
+        threat_identified:
+          type: boolean
+          description: Whether a threat was identified by the analyzer
+        threat_type:
+          type: string
+          description: Type of threat identified
+        threat_severity:
+          type: string
+          description: Initial severity from threat analyzer
+        threat_indicators:
+          type: array
+          items:
+            type: string
+          description: Indicators identified by threat analyzer
+        analysis_summary:
+          type: string
+          description: Summary from threat analyzer
+        asset_context:
+          type: string
+          description: Information about affected assets (criticality, data sensitivity)
+      required: [threat_identified, threat_type, threat_severity, threat_indicators, analysis_summary]
+    output:
+      type: object
+      properties:
+        risk_score:
+          type: number
+          minimum: 0
+          maximum: 10
+          description: Calculated risk score (0-10)
+        risk_level:
+          type: string
+          enum: [minimal, low, medium, high, critical]
+          description: Categorized risk level
+        business_impact:
+          type: string
+          description: Potential business impact description
+        immediate_actions:
+          type: array
+          items:
+            type: string
+          description: Actions to take immediately
+        mitigation_recommendations:
+          type: array
+          items:
+            type: string
+          description: Longer-term mitigation strategies
+        escalation_required:
+          type: boolean
+          description: Whether this needs immediate escalation
+        confidence_level:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Confidence in the risk assessment
+      required: [risk_score, risk_level, business_impact, immediate_actions, 
+                mitigation_recommendations, escalation_required, confidence_level]
+
+prompts:
+  system: >
+    You are an expert security risk assessor. Evaluate threat analyses to determine 
+    organizational risk and provide actionable recommendations. Consider business 
+    impact, asset criticality, and practical mitigation strategies.
+  user: ""
+  
+  assess_threat_risk:
+    system: >
+      Evaluate this threat analysis and determine risk:
+      
+      Threat Type: {{ threat_type }}
+      Severity: {{ threat_severity }}
+      Threat Identified: {{ threat_identified }}
+      
+      Consider:
+      - Business impact of the threat
+      - Asset criticality and data sensitivity
+      - Likelihood of successful exploitation
+      - Available mitigation options
+      - Cost vs risk trade-offs
+      
+      Respond ONLY with a JSON object in this exact format:
+      {
+        "risk_score": 7.5,
+        "risk_level": "high",
+        "business_impact": "Potential unauthorized access to critical systems",
+        "immediate_actions": ["Lock account", "Monitor for additional attempts"],
+        "mitigation_recommendations": ["Implement MFA", "Review access policies"],
+        "escalation_required": true,
+        "confidence_level": 0.85
+      }
+
+      IMPORTANT:
+      - risk_score must be a number (0-10)
+      - risk_level must be one of: "minimal", "low", "medium", "high", "critical"
+      - immediate_actions must be an array of strings
+      - mitigation_recommendations must be an array of strings
+      - escalation_required must be boolean (true/false)
+      - confidence_level must be a number (0-1)
+      - Provide only valid JSON, no other text
+      
+      Provide practical, prioritized recommendations.
+    user: |
+      Threat Indicators: {{ threat_indicators }}
+      Analysis Summary: {{ analysis_summary }}
+      Asset Context: {{ asset_context | default("Standard production system") }}
+
+behavioural_contract:
+  version: "0.1.2"
+  description: "Risk assessment with business-focused evaluation and recommendations"
+  role: "Risk assessor"
+  behavioural_flags:
+    conservatism: "high"
+    verbosity: "comprehensive"
+    practicality: "high"
+    temperature_control:
+      mode: "strict"
+      range: [0.1, 0.3]
+  response_contract:
+    output_format:
+      required_fields: [risk_score, risk_level, immediate_actions, confidence_level]
+    safety_checks:
+      harmful_content: false
+      recommendation_safety: true
