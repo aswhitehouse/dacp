@@ -135,6 +135,5 @@ This pattern can be adapted for various security scenarios:
 
 ## Learn More
 
-- **DACP Documentation** - [dacp.ai](https://dacp.ai)
+- **DACP Documentation** - [dacp repo](https://github.com/aswhitehouse/dacp)
 - **Open Agent Stack** - [openagentstack.ai](https://openagentstack.ai)
-- **Guardian AI Project** - Real-world security agent implementations
