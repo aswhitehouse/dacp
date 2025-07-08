@@ -1,0 +1,152 @@
+open_agent_spec: 1.0.8
+
+agent:
+  name: incident-responder
+  description: Coordinates incident response activities and stakeholder communication for security events
+  role: responder
+
+intelligence:
+  type: llm
+  engine: openai
+  model: gpt-4
+  config:
+    temperature: 0.3
+    max_tokens: 2000
+
+logging:
+  enabled: true
+  level: "INFO"
+  format_style: "emoji"
+  include_timestamp: true
+  log_file: "./logs/incident-responder.log"
+
+tasks:
+  coordinate_incident_response:
+    description: Coordinate comprehensive incident response activities based on risk assessment
+    input:
+      type: object
+      properties:
+        risk_score:
+          type: number
+          minimum: 0
+          maximum: 10
+          description: Risk score from risk assessment (0-10)
+        risk_level:
+          type: string
+          enum: [minimal, low, medium, high, critical]
+          description: Categorized risk level
+        business_impact:
+          type: string
+          description: Business impact description from risk assessment
+        immediate_actions:
+          type: array
+          items:
+            type: string
+          description: Immediate actions recommended by risk assessor
+        escalation_required:
+          type: boolean
+          description: Whether escalation is required
+        threat_type:
+          type: string
+          description: Type of threat from initial analysis
+        threat_severity:
+          type: string
+          description: Severity of threat from initial analysis
+        incident_context:
+          type: string
+          description: Additional context about the incident
+      required: [risk_score, risk_level, business_impact, immediate_actions, escalation_required]
+    output:
+      type: object
+      properties:
+        incident_id:
+          type: string
+          description: Unique incident identifier (format: INC-YYYY-NNNN)
+        response_plan:
+          type: array
+          items:
+            type: string
+          description: Detailed response plan steps
+        assigned_responders:
+          type: array
+          items:
+            type: string
+          description: Team members assigned to response
+        escalation_contacts:
+          type: array
+          items:
+            type: string
+          description: Contacts for escalation based on risk level
+        timeline:
+          type: string
+          description: Expected timeline for response activities
+        communication_plan:
+          type: array
+          items:
+            type: string
+          description: Stakeholder communication strategy
+        next_steps:
+          type: array
+          items:
+            type: string
+          description: Follow-up actions and monitoring
+      required: [incident_id, response_plan, assigned_responders, escalation_contacts, 
+                timeline, communication_plan, next_steps]
+
+prompts:
+  system: >
+    You are an expert incident response coordinator. Based on security risk assessments, 
+    you coordinate comprehensive response activities, manage stakeholder communication, 
+    and ensure appropriate escalation. Focus on practical, actionable response plans 
+    that align with business priorities and regulatory requirements.
+  user: ""
+  
+  coordinate_incident_response:
+    system: >
+      Coordinate incident response based on this risk assessment:
+      
+      Risk Assessment Results:
+      - Risk Score: {{ risk_score }}/10
+      - Risk Level: {{ risk_level }}
+      - Threat Type: {{ threat_type }}
+      - Threat Severity: {{ threat_severity }}
+      - Escalation Required: {{ escalation_required }}
+      
+      Business Impact: {{ business_impact }}
+      Recommended Immediate Actions: {{ immediate_actions }}
+      
+      Coordinate appropriate response activities:
+      1. Generate unique incident ID (format: INC-YYYY-NNNN)
+      2. Develop structured response plan based on risk level
+      3. Assign appropriate response team members
+      4. Determine escalation contacts based on business impact
+      5. Establish realistic timeline for response activities
+      6. Create stakeholder communication plan
+      7. Define clear next steps for response team
+      
+      Consider:
+      - Risk level determines response urgency and resources
+      - Business impact drives escalation requirements
+      - Threat type influences specialized response needs
+      - Communication must be appropriate for stakeholders
+    user: |
+      Additional Context: {{ incident_context }}
+
+behavioural_contract:
+  version: "0.1.2"
+  description: "Incident response coordination with structured planning and communication"
+  role: "Incident response coordinator"
+  behavioural_flags:
+    urgency_awareness: "critical"
+    stakeholder_focus: "high"
+    business_alignment: "critical"
+    practicality: "high"
+    temperature_control:
+      mode: "strict"
+      range: [0.2, 0.4]
+  response_contract:
+    output_format:
+      required_fields: [incident_id, response_plan, timeline, next_steps]
+    safety_checks:
+      recommendation_safety: true
+      timeline_realism: true

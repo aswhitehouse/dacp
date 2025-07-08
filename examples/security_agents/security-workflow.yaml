@@ -4,6 +4,8 @@ agents:
     spec: threat-analyzer.yaml
   - id: risk-assessor
     spec: risk-assessor.yaml
+  - id: incident-responder
+    spec: incident-responder.yaml
 
 workflows:
   security_incident_analysis:
@@ -51,3 +53,41 @@ workflows:
             threat_indicators: "{{output.threat_indicators}}"
             analysis_summary: "{{output.analysis_summary}}"
             asset_context: "Critical customer database"
+
+  complete_security_response:
+    description: "Full 3-stage security workflow: threat analysis → risk assessment → incident response"
+    steps:
+      # Stage 1: Threat Analysis
+      - agent: threat-analyzer
+        task: analyze_security_event
+        input:
+          event_type: "{{event_type}}"
+          event_details: "{{event_details}}"
+          source_ip: "{{source_ip}}"
+          timestamp: "{{timestamp}}"
+        route_output_to:
+          agent: risk-assessor
+          task: assess_threat_risk
+          input_mapping:
+            threat_identified: "{{output.threat_identified}}"
+            threat_type: "{{output.threat_type}}"
+            threat_severity: "{{output.threat_severity}}"
+            threat_indicators: "{{output.threat_indicators}}"
+            analysis_summary: "{{output.analysis_summary}}"
+            asset_context: "{{asset_context}}"
+            
+      # Stage 2: Risk Assessment  
+      - agent: risk-assessor
+        task: assess_threat_risk
+        route_output_to:
+          agent: incident-responder
+          task: coordinate_incident_response
+          input_mapping:
+            risk_score: "{{output.risk_score}}"
+            risk_level: "{{output.risk_level}}"
+            business_impact: "{{output.business_impact}}"
+            immediate_actions: "{{output.immediate_actions}}"
+            escalation_required: "{{output.escalation_required}}"
+            threat_type: "{{steps[0].output.threat_type}}"
+            threat_severity: "{{steps[0].output.threat_severity}}"
+            incident_context: "Critical security incident requiring immediate response"
