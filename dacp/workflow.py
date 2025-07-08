@@ -17,6 +17,7 @@ logger = logging.getLogger("dacp.workflow")
 
 class TaskStatus(Enum):
     """Task status enumeration."""
+
     PENDING = "pending"
     ASSIGNED = "assigned"
     IN_PROGRESS = "in_progress"
@@ -27,6 +28,7 @@ class TaskStatus(Enum):
 
 class TaskPriority(Enum):
     """Task priority enumeration."""
+
     LOW = 1
     NORMAL = 2
     HIGH = 3
@@ -36,6 +38,7 @@ class TaskPriority(Enum):
 @dataclass
 class Task:
     """Represents a task in the workflow system."""
+
     id: str
     type: str
     data: Dict[str, Any]
@@ -74,6 +77,7 @@ class Task:
 @dataclass
 class WorkflowRule:
     """Defines routing rules for agent-to-agent communication."""
+
     source_task_type: str
     target_agent: str
     target_task_type: str
@@ -102,7 +106,7 @@ class TaskBoard:
     ) -> str:
         """Add a new task to the board."""
         task_id = str(uuid.uuid4())
-        
+
         task = Task(
             id=task_id,
             type=task_type,
@@ -123,7 +127,9 @@ class TaskBoard:
             task.status = TaskStatus.ASSIGNED
             task.assigned_at = time.time()
 
-        logger.info(f"📋 Task '{task_id}' added: {task_type} from {source_agent} to {target_agent}")
+        logger.info(
+            f"📋 Task '{task_id}' added: {task_type} from {source_agent} to {target_agent}"
+        )
         return task_id
 
     def get_next_task(self, agent_name: str) -> Optional[Task]:
@@ -137,7 +143,9 @@ class TaskBoard:
 
         for task_id in queue:
             task = self.tasks[task_id]
-            if task.status == TaskStatus.ASSIGNED and self._dependencies_satisfied(task):
+            if task.status == TaskStatus.ASSIGNED and self._dependencies_satisfied(
+                task
+            ):
                 available_tasks.append(task)
 
         if not available_tasks:
@@ -145,7 +153,7 @@ class TaskBoard:
 
         # Sort by priority (higher first) then by creation time (older first)
         available_tasks.sort(key=lambda t: (-t.priority.value, t.created_at))
-        
+
         next_task = available_tasks[0]
         next_task.status = TaskStatus.IN_PROGRESS
 
@@ -153,10 +161,7 @@ class TaskBoard:
         return next_task
 
     def complete_task(
-        self, 
-        task_id: str, 
-        result: Dict[str, Any], 
-        trigger_rules: bool = True
+        self, task_id: str, result: Dict[str, Any], trigger_rules: bool = True
     ) -> None:
         """Mark a task as completed and trigger workflow rules."""
         if task_id not in self.tasks:
@@ -235,7 +240,8 @@ class TaskBoard:
                 new_task_id = self.add_task(
                     task_type=rule.target_task_type,
                     data=new_data,
-                    source_agent=completed_task.target_agent or completed_task.source_agent,
+                    source_agent=completed_task.target_agent
+                    or completed_task.source_agent,
                     target_agent=rule.target_agent,
                     priority=rule.priority,
                 )
@@ -261,13 +267,15 @@ class TaskBoard:
         for task_id in queue:
             if task_id in self.tasks:
                 task = self.tasks[task_id]
-                task_details.append({
-                    "id": task_id,
-                    "type": task.type,
-                    "status": task.status.value,
-                    "priority": task.priority.value,
-                    "created_at": task.created_at,
-                })
+                task_details.append(
+                    {
+                        "id": task_id,
+                        "type": task.type,
+                        "status": task.status.value,
+                        "priority": task.priority.value,
+                        "created_at": task.created_at,
+                    }
+                )
 
         return {
             "agent": agent_name,
@@ -331,7 +339,9 @@ class WorkflowOrchestrator:
             priority=priority,
         )
 
-    def process_agent_tasks(self, agent_name: str, max_tasks: int = 1) -> List[Dict[str, Any]]:
+    def process_agent_tasks(
+        self, agent_name: str, max_tasks: int = 1
+    ) -> List[Dict[str, Any]]:
         """Process available tasks for an agent."""
         if agent_name not in self.orchestrator.agents:
             logger.error(f"❌ Agent '{agent_name}' not registered")
@@ -358,17 +368,27 @@ class WorkflowOrchestrator:
 
                 if "error" in response:
                     self.task_board.fail_task(task.id, response["error"])
-                    results.append({"task_id": task.id, "status": "failed", "error": response["error"]})
+                    results.append(
+                        {
+                            "task_id": task.id,
+                            "status": "failed",
+                            "error": response["error"],
+                        }
+                    )
                 else:
                     self.task_board.complete_task(task.id, response)
-                    results.append({"task_id": task.id, "status": "completed", "result": response})
+                    results.append(
+                        {"task_id": task.id, "status": "completed", "result": response}
+                    )
 
                 tasks_processed += 1
 
             except Exception as e:
                 error_msg = f"Task processing failed: {e}"
                 self.task_board.fail_task(task.id, error_msg)
-                results.append({"task_id": task.id, "status": "failed", "error": error_msg})
+                results.append(
+                    {"task_id": task.id, "status": "failed", "error": error_msg}
+                )
                 tasks_processed += 1
 
         return results
@@ -406,4 +426,4 @@ class WorkflowOrchestrator:
                 agent: self.task_board.get_agent_queue_status(agent)
                 for agent in self.orchestrator.agents.keys()
             },
-        } 
+        }

@@ -121,12 +121,14 @@ class Orchestrator:
             response = agent.handle_message(message)
 
             # Handle Pydantic models by converting to dict
-            if hasattr(response, 'model_dump'):
-                logger.debug(f"📊 Converting Pydantic model to dict: {type(response).__name__}")
+            if hasattr(response, "model_dump"):
+                logger.debug(
+                    f"📊 Converting Pydantic model to dict: {type(response).__name__}"
+                )
                 response = response.model_dump()
             elif not isinstance(response, dict):
                 logger.debug(f"📊 Converting response to dict: {type(response)}")
-                if hasattr(response, '__dict__'):
+                if hasattr(response, "__dict__"):
                     response = response.__dict__
                 else:
                     response = {"result": str(response)}
@@ -180,8 +182,7 @@ class Orchestrator:
 
         duration = time.time() - start_time
         logger.info(
-            f"✅ Broadcast completed in {duration:.3f}s "
-            f"({len(responses)} responses)"
+            f"✅ Broadcast completed in {duration:.3f}s " f"({len(responses)} responses)"
         )
 
         return responses
