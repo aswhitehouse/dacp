@@ -64,9 +64,7 @@ def demo_basic_logging():
 
     # Send some messages
     print("\n📤 Sending greeting message...")
-    response = orchestrator.send_message(
-        "demo-agent", {"task": "greet", "name": "Alice"}
-    )
+    response = orchestrator.send_message("demo-agent", {"task": "greet", "name": "Alice"})
     print(f"Response: {response}")
 
     print("\n📤 Sending file write request...")
@@ -192,9 +190,7 @@ def main():
     print("• Use dacp.setup_dacp_logging() for custom configuration")
     print("• Add log_file parameter to save logs to a file")
     print("\nExample configuration:")
-    print(
-        "  dacp.setup_dacp_logging(level='INFO', format_style='emoji', log_file='dacp.log')"
-    )
+    print("  dacp.setup_dacp_logging(level='INFO', format_style='emoji', log_file='dacp.log')")
 
 
 if __name__ == "__main__":

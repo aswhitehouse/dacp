@@ -1,0 +1,114 @@
+open_agent_spec: 1.0.8
+
+agent:
+  name: threat-analyzer
+  description: Analyzes security events and identifies potential threats
+  role: analyst
+
+intelligence:
+  type: llm
+  engine: anthropic
+  model: claude-3-5-sonnet-20241022
+  config:
+    temperature: 0.3
+    max_tokens: 1000
+
+logging:
+  enabled: true
+  level: "INFO"
+  format_style: "emoji"
+  include_timestamp: true
+  log_file: "./logs/threat-analyzer.log"
+
+tasks:
+  analyze_security_event:
+    description: Analyze a security event and identify potential threats
+    input:
+      type: object
+      properties:
+        event_type:
+          type: string
+          description: Type of security event (login_failure, port_scan, data_access, etc.)
+        event_details:
+          type: string
+          description: Detailed information about the security event
+        source_ip:
+          type: string
+          description: Source IP address of the event
+        timestamp:
+          type: string
+          description: When the event occurred
+      required: [event_type, event_details, source_ip, timestamp]
+    output:
+      type: object
+      properties:
+        threat_identified:
+          type: boolean
+          description: Whether a threat was identified
+        threat_type:
+          type: string
+          description: Type of threat (brute_force, reconnaissance, data_exfiltration, etc.)
+        threat_severity:
+          type: string
+          enum: [low, medium, high, critical]
+          description: Initial severity assessment
+        threat_indicators:
+          type: array
+          items:
+            type: string
+          description: List of indicators that suggest this is a threat
+        analysis_summary:
+          type: string
+          description: Summary of the threat analysis
+      required: [threat_identified, threat_type, threat_severity, threat_indicators, analysis_summary]
+
+prompts:
+  system: >
+    You are an expert security threat analyst. Analyze security events to identify 
+    potential threats. Focus on patterns, anomalies, and known attack signatures.
+    Be precise and provide clear threat indicators.
+  user: ""
+  
+  analyze_security_event:
+    system: >
+      Analyze this security event for potential threats:
+      Event Type: {{ event_type }}
+      Source IP: {{ source_ip }}
+      Timestamp: {{ timestamp }}
+      
+      Look for:
+      - Attack patterns
+      - Anomalous behavior
+      - Known threat signatures
+      - Suspicious timing or frequency
+      
+      Respond ONLY with a JSON object in this exact format:
+      {
+        "threat_identified": true,
+        "threat_type": "brute_force",
+        "threat_severity": "high",
+        "threat_indicators": ["multiple failed logins", "admin account targeted"],
+        "analysis_summary": "Analysis summary here"
+      }
+
+      IMPORTANT: 
+      - threat_identified must be boolean (true/false)
+      - threat_severity must be one of: "low", "medium", "high", "critical"  
+      - threat_indicators must be an array of strings
+      - Provide only valid JSON, no other text
+    user: "Event details: {{ event_details }}"
+
+behavioural_contract:
+  version: "0.1.2"
+  description: "Security-focused threat analysis with consistent evaluation"
+  role: "Threat analyst"
+  behavioural_flags:
+    conservatism: "high"
+    verbosity: "detailed"
+    accuracy: "critical"
+    temperature_control:
+      mode: "strict"
+      range: [0.2, 0.4]
+  response_contract:
+    output_format:
+      required_fields: [threat_identified, threat_type, threat_severity, analysis_summary]

@@ -61,9 +61,7 @@ class TestOrchestrator(unittest.TestCase):
         """Test successful message sending."""
         self.orchestrator.register_agent("test_agent", self.agent)
 
-        response = self.orchestrator.send_message(
-            "test_agent", {"task": "greet", "name": "Alice"}
-        )
+        response = self.orchestrator.send_message("test_agent", {"task": "greet", "name": "Alice"})
 
         self.assertEqual(response, {"response": "Hello Alice!"})
 
@@ -97,9 +95,7 @@ class TestOrchestrator(unittest.TestCase):
         self.orchestrator.register_agent("agent1", agent1)
         self.orchestrator.register_agent("agent2", agent2)
 
-        responses = self.orchestrator.broadcast_message(
-            {"task": "greet", "name": "World"}
-        )
+        responses = self.orchestrator.broadcast_message({"task": "greet", "name": "World"})
 
         self.assertEqual(len(responses), 2)
         self.assertEqual(responses["agent1"], {"response": "Hello World!"})

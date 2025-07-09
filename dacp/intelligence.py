@@ -13,9 +13,7 @@ from typing import Dict, Any, Union
 logger = logging.getLogger("dacp.intelligence")
 
 
-def invoke_intelligence(
-    prompt: str, config: Dict[str, Any]
-) -> Union[str, Dict[str, Any]]:
+def invoke_intelligence(prompt: str, config: Dict[str, Any]) -> Union[str, Dict[str, Any]]:
     """
     Invoke an intelligence provider with the given prompt and configuration.
 
@@ -54,8 +52,7 @@ def invoke_intelligence(
         else:
             available_engines = ["openai", "anthropic", "azure", "local"]
             raise ValueError(
-                f"Unsupported engine: {engine}. "
-                f"Available engines: {available_engines}"
+                f"Unsupported engine: {engine}. Available engines: {available_engines}"
             )
 
         duration = time.time() - start_time
@@ -66,10 +63,7 @@ def invoke_intelligence(
 
     except Exception as e:
         duration = time.time() - start_time
-        logger.error(
-            f"❌ Intelligence call failed after {duration:.3f}s: "
-            f"{type(e).__name__}: {e}"
-        )
+        logger.error(f"❌ Intelligence call failed after {duration:.3f}s: {type(e).__name__}: {e}")
         raise
 
 
@@ -95,8 +89,7 @@ def _invoke_openai(prompt: str, config: Dict[str, Any]) -> str:
     if not api_key:
         logger.error("❌ OpenAI API key not found")
         raise ValueError(
-            "OpenAI API key not found in config or OPENAI_API_KEY "
-            "environment variable"
+            "OpenAI API key not found in config or OPENAI_API_KEY environment variable"
         )
 
     # Configure client
@@ -111,10 +104,7 @@ def _invoke_openai(prompt: str, config: Dict[str, Any]) -> str:
     temperature = config.get("temperature", 0.7)
     max_tokens = config.get("max_tokens", 1000)
 
-    logger.debug(
-        f"🔧 OpenAI config: model={model}, temp={temperature}, "
-        f"max_tokens={max_tokens}"
-    )
+    logger.debug(f"🔧 OpenAI config: model={model}, temp={temperature}, max_tokens={max_tokens}")
 
     # Make API call
     response = client.chat.completions.create(
@@ -143,8 +133,7 @@ def _invoke_anthropic(prompt: str, config: Dict[str, Any]) -> str:
     if not api_key:
         logger.error("❌ Anthropic API key not found")
         raise ValueError(
-            "Anthropic API key not found in config or ANTHROPIC_API_KEY "
-            "environment variable"
+            "Anthropic API key not found in config or ANTHROPIC_API_KEY environment variable"
         )
 
     # Configure client
@@ -159,10 +148,7 @@ def _invoke_anthropic(prompt: str, config: Dict[str, Any]) -> str:
     temperature = config.get("temperature", 0.7)
     max_tokens = config.get("max_tokens", 1000)
 
-    logger.debug(
-        f"🔧 Anthropic config: model={model}, temp={temperature}, "
-        f"max_tokens={max_tokens}"
-    )
+    logger.debug(f"🔧 Anthropic config: model={model}, temp={temperature}, max_tokens={max_tokens}")
 
     # Make API call
     response = client.messages.create(
@@ -195,8 +181,7 @@ def _invoke_azure_openai(prompt: str, config: Dict[str, Any]) -> str:
     if not api_key:
         logger.error("❌ Azure OpenAI API key not found")
         raise ValueError(
-            "Azure OpenAI API key not found in config or "
-            "AZURE_OPENAI_API_KEY environment variable"
+            "Azure OpenAI API key not found in config or AZURE_OPENAI_API_KEY environment variable"
         )
 
     if not endpoint:
@@ -207,9 +192,7 @@ def _invoke_azure_openai(prompt: str, config: Dict[str, Any]) -> str:
         )
 
     # Configure Azure client
-    client = openai.AzureOpenAI(
-        api_key=api_key, azure_endpoint=endpoint, api_version=api_version
-    )
+    client = openai.AzureOpenAI(api_key=api_key, azure_endpoint=endpoint, api_version=api_version)
 
     # Prepare request
     model = config.get("model", config.get("deployment_name", "gpt-35-turbo"))
@@ -217,8 +200,7 @@ def _invoke_azure_openai(prompt: str, config: Dict[str, Any]) -> str:
     max_tokens = config.get("max_tokens", 1000)
 
     logger.debug(
-        f"🔧 Azure OpenAI config: model={model}, temp={temperature}, "
-        f"max_tokens={max_tokens}"
+        f"🔧 Azure OpenAI config: model={model}, temp={temperature}, max_tokens={max_tokens}"
     )
 
     # Make API call

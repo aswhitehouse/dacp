@@ -32,9 +32,7 @@ def setup_dacp_logging(
             log_format = "%(name)s - %(levelname)s - %(message)s"
     elif format_style == "detailed":
         if include_timestamp:
-            log_format = (
-                "%(asctime)s - %(name)s:%(lineno)d - %(levelname)s - %(message)s"
-            )
+            log_format = "%(asctime)s - %(name)s:%(lineno)d - %(levelname)s - %(message)s"
         else:
             log_format = "%(name)s:%(lineno)d - %(levelname)s - %(message)s"
     elif format_style == "emoji":

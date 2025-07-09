@@ -58,9 +58,7 @@ def test_tool_with_optional_args():
     register_tool("optional_args_tool", optional_args_tool)
 
     # Test with both args
-    result = execute_tool(
-        "optional_args_tool", {"required": "test", "optional": "custom"}
-    )
+    result = execute_tool("optional_args_tool", {"required": "test", "optional": "custom"})
     assert result["result"] == "test:custom"
 
     # Test with only required arg

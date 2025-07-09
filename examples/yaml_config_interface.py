@@ -86,9 +86,7 @@ class AgentConfigLoader:
             processed_config["log_file"] = str(log_path)
 
         # Other logging parameters
-        processed_config["include_timestamp"] = logging_config.get(
-            "include_timestamp", True
-        )
+        processed_config["include_timestamp"] = logging_config.get("include_timestamp", True)
         processed_config["enabled"] = True
 
         return processed_config
@@ -101,9 +99,7 @@ class ConfigurableAgent(dacp.Agent):
     This is the main interface you'd implement in your agent code.
     """
 
-    def __init__(
-        self, config_path: Optional[str] = None, config_dict: Optional[Dict] = None
-    ):
+    def __init__(self, config_path: Optional[str] = None, config_dict: Optional[Dict] = None):
         """
         Initialize agent with YAML configuration.
 
@@ -151,11 +147,7 @@ class ConfigurableAgent(dacp.Agent):
 
         # Handle API keys from environment variables
         for key, value in intelligence_config.items():
-            if (
-                isinstance(value, str)
-                and value.startswith("${")
-                and value.endswith("}")
-            ):
+            if isinstance(value, str) and value.startswith("${") and value.endswith("}"):
                 # Handle ${ENV_VAR} syntax
                 env_var = value[2:-1]
                 intelligence_config[key] = os.getenv(env_var)
@@ -202,9 +194,7 @@ class ConfigurableAgent(dacp.Agent):
             Response dictionary
         """
         # Default implementation - override in subclasses
-        return {
-            "response": f"Executed capability '{capability['name']}' with message: {message}"
-        }
+        return {"response": f"Executed capability '{capability['name']}' with message: {message}"}
 
 
 class SmartAnalysisAgent(ConfigurableAgent):
@@ -246,7 +236,9 @@ class SmartAnalysisAgent(ConfigurableAgent):
     def _generate_report(self, message: Dict[str, Any]) -> Dict[str, Any]:
         """Generate a report using the file_writer tool."""
         subject = message.get("subject", "report")
-        content = f"Analysis Report: {subject}\n\nGenerated from data: {message.get('data', 'N/A')}\n"
+        content = (
+            f"Analysis Report: {subject}\n\nGenerated from data: {message.get('data', 'N/A')}\n"
+        )
 
         return {
             "tool_request": {
@@ -260,9 +252,7 @@ class SmartAnalysisAgent(ConfigurableAgent):
 
     def _visualize_data(self, message: Dict[str, Any]) -> Dict[str, Any]:
         """Create data visualization (mock implementation)."""
-        return {
-            "response": f"Created visualization for: {message.get('data', 'unknown data')}"
-        }
+        return {"response": f"Created visualization for: {message.get('data', 'unknown data')}"}
 
 
 def create_agent_from_yaml(config_path: str) -> ConfigurableAgent:
@@ -334,7 +324,7 @@ def main():
         print(f"❌ Demo failed: {e}")
 
     # Test 2: Configuration validation
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("📋 Test 2: Configuration Validation")
     print("=" * 60)
 

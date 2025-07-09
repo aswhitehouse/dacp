@@ -17,6 +17,7 @@ logger = logging.getLogger("dacp.workflow")
 
 class TaskStatus(Enum):
     """Task status enumeration."""
+
     PENDING = "pending"
     ASSIGNED = "assigned"
     IN_PROGRESS = "in_progress"
@@ -27,6 +28,7 @@ class TaskStatus(Enum):
 
 class TaskPriority(Enum):
     """Task priority enumeration."""
+
     LOW = 1
     NORMAL = 2
     HIGH = 3
@@ -36,6 +38,7 @@ class TaskPriority(Enum):
 @dataclass
 class Task:
     """Represents a task in the workflow system."""
+
     id: str
     type: str
     data: Dict[str, Any]
@@ -74,6 +77,7 @@ class Task:
 @dataclass
 class WorkflowRule:
     """Defines routing rules for agent-to-agent communication."""
+
     source_task_type: str
     target_agent: str
     target_task_type: str
@@ -85,7 +89,7 @@ class WorkflowRule:
 class TaskBoard:
     """Central task board for managing agent-to-agent tasks."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.tasks: Dict[str, Task] = {}
         self.agent_queues: Dict[str, List[str]] = {}
         self.completed_tasks: List[str] = []
@@ -98,11 +102,11 @@ class TaskBoard:
         source_agent: str,
         target_agent: Optional[str] = None,
         priority: TaskPriority = TaskPriority.NORMAL,
-        dependencies: List[str] = None,
+        dependencies: Optional[List[str]] = None,
     ) -> str:
         """Add a new task to the board."""
         task_id = str(uuid.uuid4())
-        
+
         task = Task(
             id=task_id,
             type=task_type,
@@ -145,7 +149,7 @@ class TaskBoard:
 
         # Sort by priority (higher first) then by creation time (older first)
         available_tasks.sort(key=lambda t: (-t.priority.value, t.created_at))
-        
+
         next_task = available_tasks[0]
         next_task.status = TaskStatus.IN_PROGRESS
 
@@ -153,10 +157,7 @@ class TaskBoard:
         return next_task
 
     def complete_task(
-        self, 
-        task_id: str, 
-        result: Dict[str, Any], 
-        trigger_rules: bool = True
+        self, task_id: str, result: Dict[str, Any], trigger_rules: bool = True
     ) -> None:
         """Mark a task as completed and trigger workflow rules."""
         if task_id not in self.tasks:
@@ -240,9 +241,7 @@ class TaskBoard:
                     priority=rule.priority,
                 )
 
-                logger.info(
-                    f"🔄 Workflow rule triggered: {completed_task.id} → {new_task_id}"
-                )
+                logger.info(f"🔄 Workflow rule triggered: {completed_task.id} → {new_task_id}")
 
     def get_task_status(self, task_id: str) -> Optional[Dict[str, Any]]:
         """Get task status and details."""
@@ -261,13 +260,15 @@ class TaskBoard:
         for task_id in queue:
             if task_id in self.tasks:
                 task = self.tasks[task_id]
-                task_details.append({
-                    "id": task_id,
-                    "type": task.type,
-                    "status": task.status.value,
-                    "priority": task.priority.value,
-                    "created_at": task.created_at,
-                })
+                task_details.append(
+                    {
+                        "id": task_id,
+                        "type": task.type,
+                        "status": task.status.value,
+                        "priority": task.priority.value,
+                        "created_at": task.created_at,
+                    }
+                )
 
         return {
             "agent": agent_name,
@@ -277,7 +278,7 @@ class TaskBoard:
 
     def get_workflow_summary(self) -> Dict[str, Any]:
         """Get overall workflow summary."""
-        status_counts = {}
+        status_counts: Dict[str, int] = {}
         for task in self.tasks.values():
             status = task.status.value
             status_counts[status] = status_counts.get(status, 0) + 1
@@ -285,9 +286,7 @@ class TaskBoard:
         return {
             "total_tasks": len(self.tasks),
             "status_counts": status_counts,
-            "agent_queues": {
-                agent: len(queue) for agent, queue in self.agent_queues.items()
-            },
+            "agent_queues": {agent: len(queue) for agent, queue in self.agent_queues.items()},
             "completed_tasks": len(self.completed_tasks),
             "workflow_rules": len(self.workflow_rules),
         }
@@ -296,7 +295,7 @@ class TaskBoard:
 class WorkflowOrchestrator:
     """Enhanced orchestrator with workflow and agent-to-agent communication."""
 
-    def __init__(self, orchestrator):
+    def __init__(self, orchestrator: Any) -> None:
         """Initialize with a base orchestrator."""
         self.orchestrator = orchestrator
         self.task_board = TaskBoard()
@@ -358,7 +357,13 @@ class WorkflowOrchestrator:
 
                 if "error" in response:
                     self.task_board.fail_task(task.id, response["error"])
-                    results.append({"task_id": task.id, "status": "failed", "error": response["error"]})
+                    results.append(
+                        {
+                            "task_id": task.id,
+                            "status": "failed",
+                            "error": response["error"],
+                        }
+                    )
                 else:
                     self.task_board.complete_task(task.id, response)
                     results.append({"task_id": task.id, "status": "completed", "result": response})
@@ -406,4 +411,4 @@ class WorkflowOrchestrator:
                 agent: self.task_board.get_agent_queue_status(agent)
                 for agent in self.orchestrator.agents.keys()
             },
-        } 
+        }
