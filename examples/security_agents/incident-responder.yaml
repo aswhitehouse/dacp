@@ -61,7 +61,7 @@ tasks:
       properties:
         incident_id:
           type: string
-          description: Unique incident identifier (format: INC-YYYY-NNNN)
+          description: "Unique incident identifier (format: INC-YYYY-NNNN)"
         response_plan:
           type: array
           items:
