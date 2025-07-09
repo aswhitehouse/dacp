@@ -135,9 +135,7 @@ class MultiStepAgent(dacp.Agent):
             # Step 5: Final report
             state["current_step"] = 5
             state["steps_completed"].append("risk_assessment")
-            state["data"]["risks"] = message.get(
-                "ai_response", "Standard project risks identified"
-            )
+            state["data"]["risks"] = message.get("ai_response", "Standard project risks identified")
 
             duration = time.time() - state["started_at"]
 
@@ -309,7 +307,7 @@ def demo_multi_step_workflow():
 
 def demo_research_workflow():
     """Demonstrate research workflow."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("📚 Demo 2: Research Workflow")
     print("=" * 60)
 
@@ -345,7 +343,7 @@ def demo_research_workflow():
 
 def demo_conversation_history():
     """Demonstrate conversation history tracking."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("📜 Demo 3: Conversation History")
     print("=" * 60)
 
@@ -383,7 +381,7 @@ if __name__ == "__main__":
     demo_research_workflow()
     demo_conversation_history()
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("✅ Multi-Step Workflow Demo Complete!")
     print("=" * 60)
     print("\n🎯 Key DACP Features Demonstrated:")

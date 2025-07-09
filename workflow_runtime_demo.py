@@ -51,12 +51,8 @@ def main():
     print("\n🤖 Creating and registering agents...")
 
     # Create agent instances (they register themselves with orchestrator)
-    agent_a = GreetingInitiatorAgent(
-        agent_id="greeting-initiator-agent", orchestrator=orchestrator
-    )
-    agent_b = GreetingResponderAgent(
-        agent_id="greeting-responder-agent", orchestrator=orchestrator
-    )
+    agent_a = GreetingInitiatorAgent(agent_id="greeting-initiator-agent", orchestrator=orchestrator)
+    agent_b = GreetingResponderAgent(agent_id="greeting-responder-agent", orchestrator=orchestrator)
 
     # Register with workflow runtime
     runtime.register_agent_from_config("greeting-initiator-agent", agent_a)
@@ -145,9 +141,7 @@ def main():
 
         # Show workflow configuration that was executed
         print(f"\n📋 Executed Workflow Configuration:")
-        executed_workflow = runtime.workflow_config["workflows"][
-            "greeting_conversation"
-        ]
+        executed_workflow = runtime.workflow_config["workflows"]["greeting_conversation"]
         print(f"   Description: {executed_workflow['description']}")
         print(f"   Steps:")
         for i, step in enumerate(executed_workflow["steps"], 1):

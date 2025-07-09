@@ -39,9 +39,7 @@ class SimpleAgent(dacp.Agent):
             try:
                 # This would normally work with proper API key
                 # result = dacp.invoke_intelligence("Hello AI", intelligence_config)
-                return {
-                    "response": "Would call invoke_intelligence here (no API key set for demo)"
-                }
+                return {"response": "Would call invoke_intelligence here (no API key set for demo)"}
             except Exception as e:
                 return {"error": f"Intelligence call failed: {e}"}
 
@@ -64,9 +62,7 @@ def main():
 
     print("\n" + "=" * 50)
     print("📤 Sending greeting message...")
-    response = orchestrator.send_message(
-        "simple-agent", {"task": "greet", "name": "Alice"}
-    )
+    response = orchestrator.send_message("simple-agent", {"task": "greet", "name": "Alice"})
     print(f"Response: {response}")
 
     print("\n" + "=" * 50)

@@ -62,10 +62,7 @@ class Orchestrator:
             raise ValueError("Agent must inherit from dacp.Agent base class")
 
         self.agents[name] = agent
-        logger.info(
-            f"✅ Agent '{name}' registered successfully "
-            f"(type: {type(agent).__name__})"
-        )
+        logger.info(f"✅ Agent '{name}' registered successfully (type: {type(agent).__name__})")
         logger.debug(f"📊 Total registered agents: {len(self.agents)}")
 
     def unregister_agent(self, name: str) -> bool:
@@ -122,9 +119,7 @@ class Orchestrator:
 
             # Handle Pydantic models by converting to dict
             if hasattr(response, "model_dump"):
-                logger.debug(
-                    f"📊 Converting Pydantic model to dict: {type(response).__name__}"
-                )
+                logger.debug(f"📊 Converting Pydantic model to dict: {type(response).__name__}")
                 response = response.model_dump()
             elif not isinstance(response, dict):
                 logger.debug(f"📊 Converting response to dict: {type(response)}")
@@ -140,9 +135,7 @@ class Orchestrator:
             # Check if agent requested tool execution
             if isinstance(response, dict) and "tool_request" in response:
                 logger.info(f"🔧 Agent '{agent_name}' requested tool execution")
-                response = self._handle_tool_request(
-                    agent_name, response["tool_request"]
-                )
+                response = self._handle_tool_request(agent_name, response["tool_request"])
 
             # Log the conversation
             self._log_conversation(agent_name, message, response, duration)
@@ -181,15 +174,11 @@ class Orchestrator:
             responses[agent_name] = self.send_message(agent_name, message)
 
         duration = time.time() - start_time
-        logger.info(
-            f"✅ Broadcast completed in {duration:.3f}s " f"({len(responses)} responses)"
-        )
+        logger.info(f"✅ Broadcast completed in {duration:.3f}s ({len(responses)} responses)")
 
         return responses
 
-    def _handle_tool_request(
-        self, agent_name: str, tool_request: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _handle_tool_request(self, agent_name: str, tool_request: Dict[str, Any]) -> Dict[str, Any]:
         """
         Handle tool execution request from an agent.
 
@@ -214,9 +203,7 @@ class Orchestrator:
             result = execute_tool(tool_name, tool_args)
             duration = time.time() - start_time
 
-            logger.info(
-                f"✅ Tool '{tool_name}' executed successfully in {duration:.3f}s"
-            )
+            logger.info(f"✅ Tool '{tool_name}' executed successfully in {duration:.3f}s")
             logger.debug(f"🔧 Tool result: {result}")
 
             return {"tool_result": {"name": tool_name, "result": result}}
@@ -255,9 +242,7 @@ class Orchestrator:
             self.conversation_history = self.conversation_history[-1000:]
             logger.debug("🗂️  Conversation history trimmed to 1000 entries")
 
-    def get_conversation_history(
-        self, limit: Optional[int] = None
-    ) -> List[Dict[str, Any]]:
+    def get_conversation_history(self, limit: Optional[int] = None) -> List[Dict[str, Any]]:
         """
         Get conversation history.
 
@@ -285,13 +270,9 @@ class Orchestrator:
             "agent_names": list(self.agents.keys()),
             "conversation_entries": len(self.conversation_history),
             "start_time": (
-                self.conversation_history[0]["timestamp"]
-                if self.conversation_history
-                else None
+                self.conversation_history[0]["timestamp"] if self.conversation_history else None
             ),
             "last_activity": (
-                self.conversation_history[-1]["timestamp"]
-                if self.conversation_history
-                else None
+                self.conversation_history[-1]["timestamp"] if self.conversation_history else None
             ),
         }

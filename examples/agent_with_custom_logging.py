@@ -159,9 +159,7 @@ def main():
     orchestrator3 = dacp.Orchestrator()
     orchestrator3.register_agent("yaml-agent", agent3)
 
-    response = orchestrator3.send_message(
-        "yaml-agent", {"task": "greet", "name": "YAML User"}
-    )
+    response = orchestrator3.send_message("yaml-agent", {"task": "greet", "name": "YAML User"})
     print(f"Response: {response}")
 
     print("\n" + "=" * 60)

@@ -35,18 +35,18 @@ def generate_agent_from_oas(config_file: str) -> str:
     # Generate agent code
     agent_code = f'''#!/usr/bin/env python3
 """
-{metadata.get('description', 'Generated agent')}
+{metadata.get("description", "Generated agent")}
 
 Generated from OAS configuration: {config_file}
-Agent: {metadata.get('name', 'unknown')}
-Version: {metadata.get('version', '1.0.0')}
+Agent: {metadata.get("name", "unknown")}
+Version: {metadata.get("version", "1.0.0")}
 """
 
 import os
 import dacp
 
 
-class {_to_class_name(metadata.get('name', 'GeneratedAgent'))}(dacp.Agent):
+class {_to_class_name(metadata.get("name", "GeneratedAgent"))}(dacp.Agent):
     """Generated agent class from OAS specification."""
     
     def __init__(self):
@@ -68,15 +68,15 @@ class {_to_class_name(metadata.get('name', 'GeneratedAgent'))}(dacp.Agent):
         
         {_generate_capability_handlers(capabilities)}
         
-        return {{"error": f"Unknown task: {{task}}. Available tasks: {[cap['name'] for cap in capabilities]}"}}
+        return {{"error": f"Unknown task: {{task}}. Available tasks: {[cap["name"] for cap in capabilities]}"}}
 
 
 def main():
     """Run the generated agent."""
     # Create orchestrator and agent
     orchestrator = dacp.Orchestrator()
-    agent = {_to_class_name(metadata.get('name', 'GeneratedAgent'))}()
-    orchestrator.register_agent("{metadata.get('name', 'agent')}", agent)
+    agent = {_to_class_name(metadata.get("name", "GeneratedAgent"))}()
+    orchestrator.register_agent("{metadata.get("name", "agent")}", agent)
     
     print("🚀 Generated agent is running with DACP logging!")
     print("Available capabilities:")
@@ -90,7 +90,7 @@ def main():
     
     for msg in test_messages:
         print(f"\\nSending: {{msg}}")
-        response = orchestrator.send_message("{metadata.get('name', 'agent')}", msg)
+        response = orchestrator.send_message("{metadata.get("name", "agent")}", msg)
         print(f"Response: {{response}}")
 
 
@@ -128,9 +128,7 @@ def _generate_logging_setup(logging_config: Dict[str, Any]) -> str:
     # Environment variable overrides
     if env_overrides:
         if "level" in env_overrides:
-            setup_lines.append(
-                f'        level = os.getenv("{env_overrides["level"]}", "{level}")'
-            )
+            setup_lines.append(f'        level = os.getenv("{env_overrides["level"]}", "{level}")')
         if "format_style" in env_overrides:
             setup_lines.append(
                 f'        format_style = os.getenv("{env_overrides["format_style"]}", "{format_style}")'

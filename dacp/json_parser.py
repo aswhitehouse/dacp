@@ -84,7 +84,9 @@ def extract_json_from_text(text: str) -> Optional[Dict[str, Any]]:
 
 
 def create_fallback_response(
-    text: str, required_fields: Dict[str, Any], optional_fields: Dict[str, Any] = None
+    text: str,
+    required_fields: Dict[str, Any],
+    optional_fields: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     Create a fallback response when JSON parsing fails.
@@ -115,9 +117,7 @@ def create_fallback_response(
                 logger.debug(f"🎯 Extracted agent name: {agent_match.group(1)}")
             else:
                 fallback[field_name] = default_value or "unknown"
-                logger.debug(
-                    f"🔧 Using default for {field_name}: {fallback[field_name]}"
-                )
+                logger.debug(f"🔧 Using default for {field_name}: {fallback[field_name]}")
         else:
             fallback[field_name] = default_value
             logger.debug(f"⚙️ Setting {field_name} to default: {default_value}")
@@ -133,11 +133,11 @@ def create_fallback_response(
 
 
 def robust_json_parse(
-    response: Union[str, dict, BaseModel],
+    response: Union[str, Dict[str, Any], BaseModel],
     target_model: type,
     required_fields: Dict[str, Any],
-    optional_fields: Dict[str, Any] = None,
-) -> BaseModel:
+    optional_fields: Optional[Dict[str, Any]] = None,
+) -> Any:
     """
     Robust JSON parsing with intelligent fallbacks.
 
@@ -185,9 +185,7 @@ def robust_json_parse(
 
         # Create fallback response
         logger.info("🔄 Creating fallback response for string input")
-        fallback_data = create_fallback_response(
-            response, required_fields, optional_fields
-        )
+        fallback_data = create_fallback_response(response, required_fields, optional_fields)
 
         try:
             result = target_model(**fallback_data)
@@ -203,9 +201,7 @@ def robust_json_parse(
     raise ValueError(error_msg)
 
 
-def parse_with_fallback(
-    response: Any, model_class: type, **field_defaults
-) -> BaseModel:
+def parse_with_fallback(response: Any, model_class: type, **field_defaults: Any) -> Any:
     """
     Convenience function for parsing with automatic field detection.
 

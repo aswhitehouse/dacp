@@ -91,7 +91,7 @@ class RegisteredAgent:
 class AgentRegistry:
     """Registry for managing agent instances."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.agents: Dict[str, RegisteredAgent] = {}
 
     def register_agent(
@@ -141,7 +141,7 @@ class AgentRegistry:
 class TaskRegistry:
     """Registry for managing task executions."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.tasks: Dict[str, TaskExecution] = {}
         self.workflow_tasks: Dict[str, List[str]] = {}  # workflow_id -> task_ids
 
@@ -181,7 +181,7 @@ class TaskRegistry:
         """Get a task by ID."""
         return self.tasks.get(task_id)
 
-    def update_task_status(self, task_id: str, status: TaskStatus, **kwargs) -> bool:
+    def update_task_status(self, task_id: str, status: TaskStatus, **kwargs: Any) -> bool:
         """Update task status and optional fields."""
         if task_id not in self.tasks:
             return False
@@ -209,7 +209,7 @@ class TaskRegistry:
 
     def get_task_summary(self) -> Dict[str, Any]:
         """Get summary of all tasks."""
-        status_counts = {}
+        status_counts: Dict[str, int] = {}
         for task in self.tasks.values():
             status = task.status.value
             status_counts[status] = status_counts.get(status, 0) + 1
@@ -224,11 +224,11 @@ class TaskRegistry:
 class WorkflowRuntime:
     """DACP Workflow Runtime - Executes workflows from workflow.yaml"""
 
-    def __init__(self, orchestrator=None):
+    def __init__(self, orchestrator: Optional[Any] = None) -> None:
         self.orchestrator = orchestrator
         self.agent_registry = AgentRegistry()
         self.task_registry = TaskRegistry()
-        self.workflow_config = {}
+        self.workflow_config: Dict[str, Any] = {}
         self.active_workflows: Dict[str, Dict[str, Any]] = {}
 
     def load_workflow_config(self, config_path: str) -> None:
@@ -241,9 +241,7 @@ class WorkflowRuntime:
             self.workflow_config = yaml.safe_load(f)
 
         logger.info(f"📁 Loaded workflow config from {config_path}")
-        logger.info(
-            f"📋 Found {len(self.workflow_config.get('workflows', {}))} workflows"
-        )
+        logger.info(f"📋 Found {len(self.workflow_config.get('workflows', {}))} workflows")
 
     def register_agent_from_config(self, agent_id: str, agent_instance: Any) -> None:
         """Register an agent instance based on workflow config."""
@@ -262,7 +260,7 @@ class WorkflowRuntime:
         )
 
     def execute_workflow(
-        self, workflow_name: str, initial_input: Dict[str, Any] = None
+        self, workflow_name: str, initial_input: Optional[Dict[str, Any]] = None
     ) -> str:
         """Execute a workflow by name."""
         if workflow_name not in self.workflow_config.get("workflows", {}):
@@ -342,9 +340,7 @@ class WorkflowRuntime:
             return
 
         # Update task status
-        self.task_registry.update_task_status(
-            task_id, TaskStatus.RUNNING, started_at=time.time()
-        )
+        self.task_registry.update_task_status(task_id, TaskStatus.RUNNING, started_at=time.time())
 
         try:
             # Prepare message for agent
@@ -367,9 +363,7 @@ class WorkflowRuntime:
                 return
 
             # Task completed successfully
-            self.task_registry.update_task_status(
-                task_id, TaskStatus.COMPLETED, output_data=result
-            )
+            self.task_registry.update_task_status(task_id, TaskStatus.COMPLETED, output_data=result)
 
             logger.info(f"✅ Task '{task_id}' completed successfully")
 
@@ -377,9 +371,7 @@ class WorkflowRuntime:
             self._handle_task_completion(task_id, workflow_id, step_index, result)
 
         except Exception as e:
-            self.task_registry.update_task_status(
-                task_id, TaskStatus.FAILED, error=str(e)
-            )
+            self.task_registry.update_task_status(task_id, TaskStatus.FAILED, error=str(e))
             logger.error(f"❌ Task '{task_id}' failed with exception: {e}")
 
     def _handle_task_completion(
@@ -447,11 +439,7 @@ class WorkflowRuntime:
         """Resolve input data with context variables."""
         resolved = {}
         for key, value in input_config.items():
-            if (
-                isinstance(value, str)
-                and value.startswith("{{")
-                and value.endswith("}}")
-            ):
+            if isinstance(value, str) and value.startswith("{{") and value.endswith("}}"):
                 # Template variable
                 var_path = value[2:-2].strip()
                 resolved[key] = self._get_nested_value(context, var_path)
@@ -515,9 +503,7 @@ class WorkflowRuntime:
         return {
             "agents": {
                 "registered": len(self.agent_registry.agents),
-                "agents": [
-                    agent.to_dict() for agent in self.agent_registry.agents.values()
-                ],
+                "agents": [agent.to_dict() for agent in self.agent_registry.agents.values()],
             },
             "tasks": self.task_registry.get_task_summary(),
             "workflows": {

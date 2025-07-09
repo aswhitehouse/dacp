@@ -26,7 +26,7 @@ from agents.agentb.agent import GreetingResponderAgent
 
 def print_section(title: str, content: str = None):
     """Print a formatted section header."""
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print(f"📋 {title}")
     print("=" * 80)
     if content:
@@ -105,12 +105,8 @@ def main():
     print_section("AGENT REGISTRATION")
 
     # Create agent instances
-    agent_a = GreetingInitiatorAgent(
-        agent_id="greeting-initiator-agent", orchestrator=orchestrator
-    )
-    agent_b = GreetingResponderAgent(
-        agent_id="greeting-responder-agent", orchestrator=orchestrator
-    )
+    agent_a = GreetingInitiatorAgent(agent_id="greeting-initiator-agent", orchestrator=orchestrator)
+    agent_b = GreetingResponderAgent(agent_id="greeting-responder-agent", orchestrator=orchestrator)
 
     # Register with workflow runtime
     runtime.register_agent_from_config("greeting-initiator-agent", agent_a)
@@ -158,7 +154,7 @@ def main():
             print_section("TASK EXECUTION DETAILS")
 
             for i, task in enumerate(workflow_status["tasks"], 1):
-                print(f"\n{'='*60}")
+                print(f"\n{'=' * 60}")
                 print(f"TASK {i} EXECUTION")
                 print("=" * 60)
                 print_full_message_details(task)
@@ -193,22 +189,16 @@ def main():
 
             print("🗣️  AGENT-TO-AGENT CONVERSATION:")
             print(f"\n   Agent A (greeting-initiator-agent):")
-            if agent_a_task and agent_a_task.get("output_data", {}).get(
-                "greeting_message"
-            ):
+            if agent_a_task and agent_a_task.get("output_data", {}).get("greeting_message"):
                 greeting = agent_a_task["output_data"]["greeting_message"]
                 print(f'      💬 "{greeting}"')
 
             print(f"\n   Agent B (greeting-responder-agent):")
-            if agent_b_task and agent_b_task.get("output_data", {}).get(
-                "response_message"
-            ):
+            if agent_b_task and agent_b_task.get("output_data", {}).get("response_message"):
                 response = agent_b_task["output_data"]["response_message"]
                 print(f'      💬 "{response}"')
             elif agent_b_task and agent_b_task.get("status") == "failed":
-                print(
-                    f"      ❌ Task failed: {agent_b_task.get('error', 'Unknown error')}"
-                )
+                print(f"      ❌ Task failed: {agent_b_task.get('error', 'Unknown error')}")
 
             if agent_a_task and agent_b_task:
                 print(
@@ -218,9 +208,7 @@ def main():
                 if agent_b_task.get("status") == "completed":
                     print(f"✅ Agent-to-agent communication successful")
                 else:
-                    print(
-                        f"⚠️  Agent-to-agent communication partially successful (Agent B failed)"
-                    )
+                    print(f"⚠️  Agent-to-agent communication partially successful (Agent B failed)")
 
         print_section(
             "DEMONSTRATION COMPLETED",

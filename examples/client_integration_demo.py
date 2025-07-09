@@ -133,7 +133,7 @@ def demo_independent_client_usage():
 
 def demo_llm_routing():
     """Demonstrate DACP's LLM routing capabilities for clients."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("🧠 Demo: LLM Routing Through DACP")
     print("=" * 60)
 
@@ -153,7 +153,7 @@ def demo_llm_routing():
 
 def demo_tool_routing():
     """Demonstrate DACP's tool routing capabilities for clients."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("🔧 Demo: Tool Routing Through DACP")
     print("=" * 60)
 
@@ -190,7 +190,7 @@ def demo_tool_routing():
 
 def demo_multi_agent_routing():
     """Demonstrate DACP routing between multiple client agents."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("🎭 Demo: Multi-Agent Routing Through DACP")
     print("=" * 60)
 
@@ -242,7 +242,7 @@ def demo_multi_agent_routing():
 
 def demo_direct_api_usage():
     """Show how clients can use DACP APIs directly without orchestrator."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("🎯 Demo: Direct DACP API Usage")
     print("=" * 60)
 
@@ -281,7 +281,7 @@ def demo_direct_api_usage():
 
 def demo_client_tool_registration():
     """Show how clients can register their own custom tools."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("🛠️  Demo: Client Custom Tool Registration")
     print("=" * 60)
 
@@ -327,7 +327,7 @@ if __name__ == "__main__":
     demo_direct_api_usage()
     demo_client_tool_registration()
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("✅ DACP Client Integration Demo Complete!")
     print("=" * 60)
 

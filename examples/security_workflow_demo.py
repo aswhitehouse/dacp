@@ -4,7 +4,7 @@ DACP 3-Stage Security Workflow Demo
 
 This demonstrates a comprehensive security operations workflow with DACP orchestration:
 - Stage 1: Threat Analyzer Agent - Analyzes security events for potential threats
-- Stage 2: Risk Assessor Agent - Evaluates threats and provides risk scores + recommendations  
+- Stage 2: Risk Assessor Agent - Evaluates threats and provides risk scores + recommendations
 - Stage 3: Incident Responder Agent - Coordinates incident response when risk threshold exceeded
 
 Features demonstrated:
@@ -27,7 +27,7 @@ import dacp
 
 def print_section(title: str, content: str = None):
     """Print a formatted section header."""
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"🛡️  {title}")
     print("=" * 70)
     if content:
@@ -59,9 +59,7 @@ def main():
     print("✅ DACP imported successfully")
 
     print_section("3-STAGE SECURITY WORKFLOW DEMONSTRATION")
-    print(
-        "Comprehensive security analysis: Threat Analysis → Risk Assessment → Incident Response"
-    )
+    print("Comprehensive security analysis: Threat Analysis → Risk Assessment → Incident Response")
 
     print_section("AGENT INITIALIZATION")
 
@@ -206,21 +204,13 @@ def main():
         print("✅ Incident response coordination completed!")
         print(f"   🆔 Incident ID: {incident_result['incident_id']}")
         print(f"   ⏱️  Timeline: {incident_result['timeline']}")
-        print(
-            f"   📋 Response Plan: {len(incident_result['response_plan'])} coordinated actions"
-        )
-        print(
-            f"   👥 Assigned Teams: {len(incident_result['assigned_responders'])} response teams"
-        )
+        print(f"   📋 Response Plan: {len(incident_result['response_plan'])} coordinated actions")
+        print(f"   👥 Assigned Teams: {len(incident_result['assigned_responders'])} response teams")
         print(
             f"   📞 Escalation Contacts: {len(incident_result['escalation_contacts'])} executives"
         )
-        print(
-            f"   📢 Communication Plan: {len(incident_result['communication_plan'])} phases"
-        )
-        print(
-            f"   ⏭️  Next Steps: {len(incident_result['next_steps'])} follow-up actions"
-        )
+        print(f"   📢 Communication Plan: {len(incident_result['communication_plan'])} phases")
+        print(f"   ⏭️  Next Steps: {len(incident_result['next_steps'])} follow-up actions")
 
         print(f"\n   📝 Key Response Actions:")
         for i, action in enumerate(incident_result["response_plan"][:3], 1):
@@ -244,12 +234,8 @@ def main():
         print("   4. Incident Responder → (Skipped - low risk threshold)")
 
     print(f"\n📋 Final Security Assessment:")
-    print(
-        f"   • Threat: {threat_result['threat_type']} ({threat_result['threat_severity']})"
-    )
-    print(
-        f"   • Risk: {risk_result['risk_score']}/10 ({risk_result['risk_level'].upper()})"
-    )
+    print(f"   • Threat: {threat_result['threat_type']} ({threat_result['threat_severity']})")
+    print(f"   • Risk: {risk_result['risk_score']}/10 ({risk_result['risk_level'].upper()})")
     print(f"   • Escalation: {'YES' if risk_result['escalation_required'] else 'NO'}")
     print(
         f"   • Actions: {len(risk_result['immediate_actions'])} immediate, {len(risk_result['mitigation_recommendations'])} mitigation"

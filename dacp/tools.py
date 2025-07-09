@@ -43,9 +43,7 @@ def execute_tool(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
     """
     if name not in TOOL_REGISTRY:
         available_tools = list(TOOL_REGISTRY.keys())
-        logger.error(
-            f"❌ Tool '{name}' not found. " f"Available tools: {available_tools}"
-        )
+        logger.error(f"❌ Tool '{name}' not found. Available tools: {available_tools}")
         raise ValueError(f"Tool '{name}' not found. Available tools: {available_tools}")
 
     logger.debug(f"🛠️  Executing tool '{name}' with args: {args}")
