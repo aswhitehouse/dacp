@@ -3,7 +3,7 @@ open_agent_spec: 1.0.8
 agent:
   name: incident-responder
   description: Coordinates incident response activities and stakeholder communication for security events
-  role: responder
+  role: executor
 
 intelligence:
   type: llm
